@@ -48,20 +48,23 @@ Answer the §7 unknowns. Output: short notes in `docs/spikes/`, and locked decis
 
 ---
 
-## Phase 2 — `exec` + `shell`
+## Phase 2 — `exec` + `shell`  ✅ (issue #3)
 
-- [ ] `azpm exec <name> -- <cmd...>` — build child env (`AZURE_CONFIG_DIR`, `AZPM_PROFILE`,
-      `AZPM_HOME`), inherit stdio, propagate exit code. Argument-boundary handling after `--`.
-- [ ] `azpm path <name>` (tiny, supports scripting + the exec tests).
-- [ ] `azpm shell <name>` — shell detection (`--shell` > parent proc > `$SHELL`/`ComSpec`),
-      spawn interactive, inject env + prompt prefix, restore on exit. Guard against nested
-      `azpm shell` (warn if `AZPM_PROFILE` already set).
-- [ ] `az` passthrough sugar: `azpm exec dev az account show` works; document
-      `azpm exec dev -- …` vs the bare form.
-- [ ] Tests: `exec` exit-code + env propagation via fake `az`; `shell` env-injection
-      (spawn `pwsh -c` / `bash -c` asserting `$AZURE_CONFIG_DIR`).
+- [x] `azpm exec <name> -- <cmd...>` — child env (`AZURE_CONFIG_DIR`, `AZPM_PROFILE`,
+      `AZPM_HOME`), inherit stdio, propagate exit code. Everything after `--` taken verbatim.
+- [x] `azpm path <name>`.
+- [x] `azpm current` (pulled forward from Phase 3 — trivial).
+- [x] `azpm shell <name>` — shell detection (`--shell` > parent process > `$SHELL` > platform
+      default), spawn interactive, prompt prefix that *preserves* the user's prompt, nesting
+      guard. pwsh/powershell/cmd verified on Windows; bash/zsh/fish built but unverified.
+- [x] `CommandResolver` — PATH+PATHEXT lookup; batch files (`az.cmd`) with spaced paths wrapped
+      as `cmd /d /s /c "…"`.
+- [x] Tests: 24 new (exec env/exit-code/errors, CommandResolver, Shells). 41 total.
 
-**Demo:** `azpm exec dev az account show` / `azpm shell dev` → run `az` freely → `exit`.
+**Demo:** `azpm exec bls-dev -- az account show` / `azpm shell bls-dev` → run `az` freely → `exit`. ✅
+
+Deferred within this area: S4/S5 (prompt injection / shell detection) — done pragmatically here;
+bash/zsh/fish prompt polish revisited if dogfooding needs it.
 
 ---
 

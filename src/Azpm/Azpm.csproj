@@ -6,6 +6,7 @@
     <RootNamespace>Azpm</RootNamespace>
     <PublishAot>true</PublishAot>
     <StripSymbols>true</StripSymbols>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
