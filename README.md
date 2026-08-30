@@ -16,16 +16,29 @@ azpm path prod          # print the profile's AZURE_CONFIG_DIR
 azpm current            # which profile is this shell using
 ```
 
-Not built yet: `use` / `init` (in-place shell switching), `login` / `logout` / `rm`.
-For now, switching in place is just `$env:AZURE_CONFIG_DIR = azpm path <name>`.
+Full command reference: [docs/commands.md](docs/commands.md).
 
-## Build
+## In-place switching
+
+```powershell
+azpm init powershell | Out-String | Invoke-Expression   # add to $PROFILE
+azpm use prod            # sets AZURE_CONFIG_DIR + AZPM_PROFILE in this shell
+azpm deactivate
+```
+
+(bash/zsh: `eval "$(azpm init bash)"` · fish: `azpm init fish | source`)
+
+## Install
+
+No published binaries yet. Build from source:
 
 ```
-dotnet publish src/Azpm -c Release -r win-x64   # -> …/publish/azpm(.exe), a single native binary
+dotnet publish src/Azpm -c Release -r win-x64    # or linux-x64 / osx-arm64
+# -> src/Azpm/bin/Release/net10.0/<rid>/publish/azpm(.exe) — a single native binary
 ```
 
-See [docs/building.md](docs/building.md) (Windows AOT needs `vswhere.exe` on `PATH`).
+Needs the .NET 10 SDK. See [docs/building.md](docs/building.md) — Windows Native AOT also needs
+`vswhere.exe` on `PATH`.
 
 ## How it works
 

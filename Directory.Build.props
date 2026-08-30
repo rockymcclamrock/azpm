@@ -7,5 +7,6 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
     <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionSuffix Condition="'$(VersionSuffix)' == ''">pre</VersionSuffix>
   </PropertyGroup>
 </Project>

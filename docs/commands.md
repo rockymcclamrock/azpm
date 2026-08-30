@@ -1,0 +1,96 @@
+# azpm commands
+
+Global: `--home <dir>` overrides the azpm home (default `AZPM_HOME`, else `~/.azpm` /
+`%USERPROFILE%\.azpm`). `--version`, `--help`.
+
+Each profile is a directory `~/.azpm/profiles/<name>/` holding `config/` (the Azure CLI's
+`AZURE_CONFIG_DIR` for that profile) and `meta.json` (azpm's own notes).
+
+| Exit code | Meaning |
+|---|---|
+| 0 | ok |
+| 1 | usage error |
+| 2 | profile not found |
+| 3 | `az` not found |
+| 4 | `az` (or an `exec` command) failed |
+
+---
+
+## `azpm add <name> [--tenant <id/domain>] [--device-code] [--description <text>]`
+
+Creates `profiles/<name>/` and runs `az login` into it. Fails if the profile exists (use
+`login`). A failed first login removes the profile.
+
+## `azpm ls` / `azpm list` `[--json]`
+
+Table of every profile: name, account, tenant, active subscription, status
+(`ready` / `logged out`). Marks the current `AZPM_PROFILE` with `*`.
+
+## `azpm path <name>`
+
+Prints the profile's `AZURE_CONFIG_DIR`. Handy for one-offs:
+`$env:AZURE_CONFIG_DIR = azpm path prod`.
+
+## `azpm current`
+
+Prints the active profile (`AZPM_PROFILE`); exits non-zero if none.
+
+## `azpm exec <name> -- <cmd> [args...]`
+
+Runs one command with the profile's environment set (`AZURE_CONFIG_DIR`, `AZPM_PROFILE`,
+`AZPM_HOME`). stdio is inherited; the command's exit code is propagated. Everything after `--`
+is passed through verbatim.
+
+```
+azpm exec prod -- az group list -o table
+azpm exec dev  -- terraform apply
+```
+
+## `azpm shell <name> [--shell pwsh|powershell|cmd|bash|zsh|fish]`
+
+Opens an interactive subshell with the profile active and a `[azpm:<name>]` prompt prefix (your
+existing prompt is preserved). `exit` to leave. The shell is detected from `--shell`, then the
+parent process, then `$SHELL`, then the platform default.
+
+## `azpm login <name> [--tenant <id/domain>] [--device-code] [--reset]`
+
+Re-runs `az login` in an existing profile. `--reset` clears the profile's Azure state first —
+use it if you need to switch the profile to a different account (plain `az login` *adds* an
+account rather than replacing it).
+
+## `azpm logout <name>`
+
+Runs `az logout` in the profile. The profile directory and `meta.json` stay; status becomes
+`logged out`.
+
+## `azpm rm <name> [--yes]` / `azpm remove …`
+
+Deletes the profile directory. Prompts `[y/N]` unless `--yes`.
+
+## `azpm use <name> [--shell <s>]`  +  `azpm init <shell>`
+
+In-place switching for the *current* shell (no subshell). One-time setup — add to your shell
+profile:
+
+```powershell
+# PowerShell  ($PROFILE)
+azpm init powershell | Out-String | Invoke-Expression
+```
+```bash
+# bash / zsh  (~/.bashrc, ~/.zshrc)
+eval "$(azpm init bash)"
+```
+```fish
+# fish  (~/.config/fish/config.fish)
+azpm init fish | source
+```
+
+Then:
+
+```
+azpm use prod         # sets AZURE_CONFIG_DIR + AZPM_PROFILE in this shell
+azpm deactivate       # clears them (back to the default ~/.azure)
+```
+
+Without the `init` wrapper, `azpm use <name>` just prints the script — pipe it to your shell's
+eval yourself. `cmd` has no wrapper; use `azpm shell` there.
