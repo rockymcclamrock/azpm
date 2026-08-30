@@ -137,7 +137,9 @@ bash/zsh/fish prompt polish revisited if dogfooding needs it.
    set by `exec`/`shell`/`use` from the active subscription when logged in.
 6. **Azure PowerShell isolation** — redirect `AzureRmContext`.
 7. **Keychain-backed tokens** — materialize on use.
-8. **TUI picker**, **MCP server**, **import from `~/.azure`**.
+8. ~~**import from `~/.azure`**~~ ✅ `azpm import <name> [--from]` · ~~**`rename`**~~ ✅
+   `azpm rename <old> <new>`. Still: **TUI picker**, **MCP server**, `ls` real token-expiry,
+   Azure PowerShell context isolation.
 
 ---
 

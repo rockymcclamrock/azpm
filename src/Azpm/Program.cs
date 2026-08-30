@@ -59,6 +59,22 @@ addCmd.SetAction(r => Guard(() =>
 }));
 root.Subcommands.Add(addCmd);
 
+// --- import ----------------------------------------------------------------
+var importName = new Argument<string>("name") { Description = "New profile name" };
+var importFrom = new Option<string?>("--from") { Description = "Source config dir (default: current az context, else ~/.azure)" };
+var importCmd = new Command("import", "Turn an existing Azure CLI config dir into a profile") { importName, importFrom };
+importCmd.SetAction(r => Guard(() => new ImportHandler(Store(r), Console.Out).Run(
+    r.GetValue(importName)!, r.GetValue(importFrom))));
+root.Subcommands.Add(importCmd);
+
+// --- rename ---------------------------------------------------------------
+var renameOld = new Argument<string>("old") { Description = "Current profile name" };
+var renameNew = new Argument<string>("new") { Description = "New profile name" };
+var renameCmd = new Command("rename", "Rename a profile") { renameOld, renameNew };
+renameCmd.SetAction(r => Guard(() => new RenameHandler(Store(r), Console.Out).Run(
+    r.GetValue(renameOld)!, r.GetValue(renameNew)!)));
+root.Subcommands.Add(renameCmd);
+
 // --- ls --------------------------------------------------------------------
 var lsJson = new Option<bool>("--json") { Description = "Emit JSON instead of a table" };
 var lsCmd = new Command("ls", "List profiles") { lsJson };

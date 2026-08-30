@@ -85,6 +85,17 @@ Runs `az logout` in the profile. The profile directory and `meta.json` stay; sta
 
 Deletes the profile directory. Prompts `[y/N]` unless `--yes`.
 
+## `azpm import <name> [--from <dir>]`
+
+Copies an existing Azure CLI config dir into a new profile — your current login becomes a
+profile with no re-auth. `--from` defaults to the active `AZURE_CONFIG_DIR` if set (and outside
+`~/.azpm`), else `~/.azure`.
+
+## `azpm rename <old> <new>`
+
+Renames a profile directory and updates its `meta.json`. If the current shell points at `<old>`,
+run `azpm use <new>` afterwards.
+
 ## `azpm portal <name> [path] [--browser <b>] [--browser-profile <p>]`
 
 Opens `https://portal.azure.com/#@<tenant>` (the profile's active-subscription tenant) — plus an
