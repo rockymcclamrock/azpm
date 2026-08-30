@@ -11,7 +11,7 @@ public sealed class UseHandler(ProfileStore store, TextWriter output, TextWriter
         var profile = store.Load(name);
         var kind = Shells.Detect(shellName);
 
-        output.Write(ShellIntegration.UseScript(kind, profile.Name, profile.ConfigDir, store.Home.Root));
+        output.Write(ShellIntegration.UseScript(kind, store.Home, profile));
         store.TouchLastUsed(name);
 
         if (!emit && Environment.GetEnvironmentVariable(ShellIntegration.Marker) != "1")

@@ -6,6 +6,18 @@ namespace Azpm.Tests;
 
 public sealed class ShellIntegrationTests
 {
+    private static (AzpmHome, Profile) Sample(string name = "dev") => (
+        new AzpmHome(@"C:\x"),
+        new Profile
+        {
+            Name = name,
+            ConfigDir = $@"C:\x\profiles\{name}\config",
+            AzureProfile = new AzureProfileFile
+            {
+                Subscriptions = [new AzureSubscription { IsDefault = true, Id = "sub-1", TenantId = "ten-1" }],
+            },
+        });
+
     [Theory]
     [InlineData(ShellKind.Pwsh, "$env:AZURE_CONFIG_DIR = ")]
     [InlineData(ShellKind.PowerShell, "$env:AZPM_PROFILE = ")]
@@ -15,15 +27,36 @@ public sealed class ShellIntegrationTests
     [InlineData(ShellKind.Cmd, "set \"AZURE_CONFIG_DIR=")]
     public void UseScript_uses_the_right_syntax(ShellKind kind, string expectedFragment)
     {
-        var script = ShellIntegration.UseScript(kind, "dev", @"C:\x\dev\config", @"C:\x");
+        var (home, profile) = Sample();
+        var script = ShellIntegration.UseScript(kind, home, profile);
         Assert.Contains(expectedFragment, script);
         Assert.Contains("dev", script);
     }
 
     [Fact]
+    public void UseScript_exports_ARM_vars_when_logged_in()
+    {
+        var (home, profile) = Sample();
+        var script = ShellIntegration.UseScript(ShellKind.Bash, home, profile);
+        Assert.Contains("ARM_SUBSCRIPTION_ID=", script);
+        Assert.Contains("ARM_TENANT_ID=", script);
+        Assert.Contains("sub-1", script);
+    }
+
+    [Fact]
+    public void UseScript_omits_ARM_vars_when_logged_out()
+    {
+        var script = ShellIntegration.UseScript(ShellKind.Bash,
+            new AzpmHome("/x"), new Profile { Name = "dev", ConfigDir = "/x/dev" });
+        Assert.DoesNotContain("ARM_SUBSCRIPTION_ID", script);
+    }
+
+    [Fact]
     public void UseScript_quotes_awkward_paths()
     {
-        var script = ShellIntegration.UseScript(ShellKind.Bash, "dev", "/home/a b/it's", "/home/a b");
+        var script = ShellIntegration.UseScript(ShellKind.Bash,
+            new AzpmHome("/home/a b"),
+            new Profile { Name = "dev", ConfigDir = "/home/a b/it's" });
         Assert.Contains(@"'/home/a b/it'\''s'", script);
     }
 
@@ -84,6 +117,9 @@ public sealed class ShellIntegrationTests
     {
         var outw = new StringWriter();
         new DeactivateHandler(outw).Run("bash");
-        Assert.Contains("unset AZURE_CONFIG_DIR AZPM_PROFILE", outw.ToString());
+        var script = outw.ToString();
+        Assert.Contains("unset AZURE_CONFIG_DIR", script);
+        Assert.Contains("unset AZPM_PROFILE", script);
+        Assert.Contains("unset ARM_SUBSCRIPTION_ID", script);
     }
 }

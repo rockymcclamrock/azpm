@@ -6,6 +6,10 @@ Global: `--home <dir>` overrides the azpm home (default `AZPM_HOME`, else `~/.az
 Each profile is a directory `~/.azpm/profiles/<name>/` holding `config/` (the Azure CLI's
 `AZURE_CONFIG_DIR` for that profile) and `meta.json` (azpm's own notes).
 
+**Environment set for a profile** (`exec`, `shell`, `use`): `AZURE_CONFIG_DIR`, `AZPM_PROFILE`,
+`AZPM_HOME` always; and when the profile is logged in, `ARM_SUBSCRIPTION_ID` / `ARM_TENANT_ID`
+(Terraform azurerm) and `AZURE_SUBSCRIPTION_ID` — taken from the profile's active subscription.
+
 | Exit code | Meaning |
 |---|---|
 | 0 | ok |

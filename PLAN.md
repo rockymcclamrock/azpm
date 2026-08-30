@@ -130,7 +130,8 @@ bash/zsh/fish prompt polish revisited if dogfooding needs it.
    follows it on `cd` (pwsh/bash/zsh/fish), tracking auto-set profiles in `AZPM_AUTO`.
 3. **Service principals** — `azpm add --service-principal`, cert auth, CI-friendly.
 4. **Prompt module** — starship / oh-my-posh segment; richer `shell` prompt.
-5. **Terraform/SDK export** — `ARM_*` + `AZURE_*` in `exec`/`shell`/`use`.
+5. ~~**Terraform/SDK export**~~ ✅ `ARM_SUBSCRIPTION_ID` / `ARM_TENANT_ID` / `AZURE_SUBSCRIPTION_ID`
+   set by `exec`/`shell`/`use` from the active subscription when logged in.
 6. **Azure PowerShell isolation** — redirect `AzureRmContext`.
 7. **Keychain-backed tokens** — materialize on use.
 8. **TUI picker**, **MCP server**, **import from `~/.azure`**.

@@ -21,55 +21,36 @@ public static class ShellIntegration
         _ => kind.ToString().ToLowerInvariant(),
     };
 
-    public static string UseScript(ShellKind kind, string profile, string configDir, string home) => kind switch
+    public static string UseScript(ShellKind kind, AzpmHome home, Profile profile)
     {
-        ShellKind.Pwsh or ShellKind.PowerShell => $"""
-            $env:AZURE_CONFIG_DIR = {PoshLit(configDir)}
-            $env:AZPM_PROFILE = {PoshLit(profile)}
-            $env:AZPM_HOME = {PoshLit(home)}
+        var sb = new StringBuilder();
+        foreach (var (name, value) in ProfileEnv.Collect(home, profile))
+            sb.AppendLine(Assign(kind, name, value));
+        return sb.ToString();
+    }
 
-            """,
-        ShellKind.Cmd => $"""
-            set "AZURE_CONFIG_DIR={configDir}"
-            set "AZPM_PROFILE={profile}"
-            set "AZPM_HOME={home}"
+    public static string DeactivateScript(ShellKind kind)
+    {
+        var sb = new StringBuilder();
+        foreach (var name in ProfileEnv.ClearOnDeactivate)
+            sb.AppendLine(Clear(kind, name));
+        return sb.ToString();
+    }
 
-            """,
-        ShellKind.Fish => $"""
-            set -gx AZURE_CONFIG_DIR {ShLit(configDir)}
-            set -gx AZPM_PROFILE {ShLit(profile)}
-            set -gx AZPM_HOME {ShLit(home)}
-
-            """,
-        _ => $"""
-            export AZURE_CONFIG_DIR={ShLit(configDir)}
-            export AZPM_PROFILE={ShLit(profile)}
-            export AZPM_HOME={ShLit(home)}
-
-            """,
+    private static string Assign(ShellKind kind, string name, string value) => kind switch
+    {
+        ShellKind.Pwsh or ShellKind.PowerShell => $"$env:{name} = {PoshLit(value)}",
+        ShellKind.Cmd => $"set \"{name}={value}\"",
+        ShellKind.Fish => $"set -gx {name} {ShLit(value)}",
+        _ => $"export {name}={ShLit(value)}",
     };
 
-    public static string DeactivateScript(ShellKind kind) => kind switch
+    private static string Clear(ShellKind kind, string name) => kind switch
     {
-        ShellKind.Pwsh or ShellKind.PowerShell => """
-            $env:AZURE_CONFIG_DIR = $null
-            $env:AZPM_PROFILE = $null
-
-            """,
-        ShellKind.Cmd => """
-            set "AZURE_CONFIG_DIR="
-            set "AZPM_PROFILE="
-
-            """,
-        ShellKind.Fish => """
-            set -e AZURE_CONFIG_DIR
-            set -e AZPM_PROFILE
-
-            """,
-        _ => """
-            unset AZURE_CONFIG_DIR AZPM_PROFILE
-
-            """,
+        ShellKind.Pwsh or ShellKind.PowerShell => $"$env:{name} = $null",
+        ShellKind.Cmd => $"set \"{name}=\"",
+        ShellKind.Fish => $"set -e {name}",
+        _ => $"unset {name}",
     };
 
     public static string InitScript(ShellKind kind, string exePath)
