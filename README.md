@@ -30,15 +30,17 @@ azpm deactivate
 
 ## Install
 
-No published binaries yet. Build from source:
+Prebuilt single-file binaries (no runtime needed) are attached to each
+[release](https://github.com/rockymcclamrock/azpm/releases) for `win-x64`, `linux-x64`,
+`osx-arm64` — download, verify the `.sha256`, extract `azpm` onto your `PATH`.
+
+Or build from source (needs the .NET 10 SDK):
 
 ```
 dotnet publish src/Azpm -c Release -r win-x64    # or linux-x64 / osx-arm64
-# -> src/Azpm/bin/Release/net10.0/<rid>/publish/azpm(.exe) — a single native binary
 ```
 
-Needs the .NET 10 SDK. See [docs/building.md](docs/building.md) — Windows Native AOT also needs
-`vswhere.exe` on `PATH`.
+See [docs/building.md](docs/building.md) — Windows Native AOT also needs `vswhere.exe` on `PATH`.
 
 ## How it works
 

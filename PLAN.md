@@ -108,14 +108,16 @@ bash/zsh/fish prompt polish revisited if dogfooding needs it.
 
 ---
 
-## Phase 5 — Release `v0.1.0-pre`
+## Phase 5 — Release `v0.1.0-pre`  ✅ (issue #6)
 
-- [ ] `README.md`: problem, install, the 3 core workflows (`shell`, `exec`, `init`+`use`),
-      limitations (no Portal, no PowerShell-Az, no SPs yet).
-- [ ] `docs/` — one page per command; the spike findings.
-- [ ] `--version` / `--help` polish; shell completion if cheap.
-- [ ] CI release job: AOT publish per RID, checksums, attach to a GitHub pre-release.
-- [ ] Tag `v0.1.0-pre`. Dogfood on the real dev/prod tenants for a week; keep a `FEEDBACK.md`.
+- [x] `README.md`: problem, install, core workflows, limitations.
+- [x] `docs/commands.md` (per-command reference) + `docs/spikes/` + `docs/building.md`.
+- [x] `--version` → `0.1.0-pre+<sha>`; `--help` lists every command. (shell completion: deferred)
+- [x] `.github/workflows/release.yml` — on a `v*` tag: AOT publish win-x64/linux-x64/osx-arm64,
+      tar + sha256, GitHub prerelease.
+- [x] Tagged `v0.1.0-pre` →
+      [release published](https://github.com/rockymcclamrock/azpm/releases/tag/v0.1.0-pre).
+- [ ] Dogfood on the real dev/prod tenants; log to `FEEDBACK.md`.  ← **in progress**
 
 ---
 
