@@ -62,11 +62,43 @@ public sealed class ProfileStore(AzpmHome home)
     {
         if (!Exists(name))
             throw new AzpmException(ExitCode.ProfileNotFound, $"profile '{name}' not found");
-        Directory.Delete(Home.ProfileDir(name), recursive: true);
+
+        var dir = Home.ProfileDir(name);
+        // az spawns a telemetry uploader that briefly holds a handle in the config dir after a
+        // login, so a delete right afterwards can lose the race. Retry for ~2s.
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            try
+            {
+                Directory.Delete(dir, recursive: true);
+                return;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Thread.Sleep(100);
+            }
+        }
+        throw new AzpmException(ExitCode.UsageError,
+            $"could not fully remove '{dir}' — a file is still in use; try again in a moment");
     }
 
     public void TouchLastUsed(string name) =>
         UpdateMeta(name, m => m.LastUsed = DateTimeOffset.UtcNow);
+
+    public string SpPath(string name) => Path.Combine(Home.ProfileDir(name), "sp.json");
+
+    public ServicePrincipal? ReadServicePrincipal(string name) =>
+        ReadJson(SpPath(name), AzpmJson.Default.ServicePrincipal);
+
+    /// <summary>Writes <c>sp.json</c> owner-only (0600 on POSIX; Windows inherits the ~/.azpm ACL).</summary>
+    public void WriteServicePrincipal(string name, ServicePrincipal sp)
+    {
+        var path = SpPath(name);
+        WriteJson(path, sp, AzpmJson.Default.ServicePrincipal);
+        if (!OperatingSystem.IsWindows())
+            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        UpdateMeta(name, m => m.Kind = "service-principal");
+    }
 
     /// <summary>Reads <c>meta.json</c>, applies <paramref name="mutate"/>, writes it back. No-op if absent.</summary>
     public void UpdateMeta(string name, Action<ProfileMeta> mutate)

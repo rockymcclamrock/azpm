@@ -11,7 +11,7 @@ public sealed class AddHandlerTests
     {
         using var t = new TempHome();
         var az = new FakeAzRunner();
-        var code = new AddHandler(t.Store, az, TextWriter.Null).Run("dev", null, false, null);
+        var code = new AddHandler(t.Store, az, TextWriter.Null).Run("dev", new InteractiveLogin(null, false), null, null);
 
         Assert.Equal(ExitCode.Ok, code);
         var call = Assert.Single(az.Calls);
@@ -25,7 +25,7 @@ public sealed class AddHandlerTests
     {
         using var t = new TempHome();
         var az = new FakeAzRunner();
-        new AddHandler(t.Store, az, TextWriter.Null).Run("dev", "contoso.example.com", true, null);
+        new AddHandler(t.Store, az, TextWriter.Null).Run("dev", new InteractiveLogin("contoso.example.com", true), null, null);
 
         var args = az.Calls.Single().Args;
         Assert.Contains("--tenant", args);
@@ -40,7 +40,7 @@ public sealed class AddHandlerTests
         var az = new FakeAzRunner { ExitCode = 1 };
 
         var ex = Assert.Throws<AzpmException>(
-            () => new AddHandler(t.Store, az, TextWriter.Null).Run("dev", null, false, null));
+            () => new AddHandler(t.Store, az, TextWriter.Null).Run("dev", new InteractiveLogin(null, false), null, null));
 
         Assert.Equal(ExitCode.AzFailed, ex.ExitCode);
         Assert.False(t.Store.Exists("dev"));

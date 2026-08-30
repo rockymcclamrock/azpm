@@ -28,14 +28,35 @@ int Guard(Func<int> body)
     }
 }
 
+// Service-principal options, shared by `add` and `login`.
+(Option<bool> Sp, Option<string?> ClientId, Option<string?> Secret, Option<bool> SecretStdin, Option<string?> Cert)
+    SpOptions() => (
+        new Option<bool>("--service-principal", "--sp") { Description = "Authenticate as a service principal" },
+        new Option<string?>("--client-id") { Description = "Service principal application (client) ID" },
+        new Option<string?>("--client-secret") { Description = "Service principal client secret" },
+        new Option<bool>("--client-secret-stdin") { Description = "Read the client secret from stdin" },
+        new Option<string?>("--certificate") { Description = "PEM certificate file (instead of a secret)" });
+
 // --- add -------------------------------------------------------------------
 var addName = new Argument<string>("name") { Description = "Profile name" };
 var addTenant = new Option<string?>("--tenant", "-t") { Description = "Tenant ID or domain" };
 var addDeviceCode = new Option<bool>("--device-code") { Description = "Use the device-code login flow" };
 var addDescription = new Option<string?>("--description") { Description = "Free-text note shown in 'azpm ls'" };
-var addCmd = new Command("add", "Create a profile and log in") { addName, addTenant, addDeviceCode, addDescription };
-addCmd.SetAction(r => Guard(() => new AddHandler(Store(r), AzCli.Locate(), Console.Out).Run(
-    r.GetValue(addName)!, r.GetValue(addTenant), r.GetValue(addDeviceCode), r.GetValue(addDescription))));
+var addSp = SpOptions();
+var addCmd = new Command("add", "Create a profile and log in")
+{
+    addName, addTenant, addDeviceCode, addDescription,
+    addSp.Sp, addSp.ClientId, addSp.Secret, addSp.SecretStdin, addSp.Cert,
+};
+addCmd.SetAction(r => Guard(() =>
+{
+    var tenant = r.GetValue(addTenant);
+    var sp = ServicePrincipalInput.Resolve(
+        r.GetValue(addSp.Sp), r.GetValue(addSp.ClientId), tenant,
+        r.GetValue(addSp.Secret), r.GetValue(addSp.SecretStdin), r.GetValue(addSp.Cert), Console.In);
+    return new AddHandler(Store(r), AzCli.Locate(), Console.Out).Run(
+        r.GetValue(addName)!, new InteractiveLogin(tenant, r.GetValue(addDeviceCode)), sp, r.GetValue(addDescription));
+}));
 root.Subcommands.Add(addCmd);
 
 // --- ls --------------------------------------------------------------------
@@ -99,12 +120,21 @@ var loginName = new Argument<string>("name") { Description = "Profile name" };
 var loginTenant = new Option<string?>("--tenant", "-t") { Description = "Tenant ID or domain" };
 var loginDeviceCode = new Option<bool>("--device-code") { Description = "Use the device-code login flow" };
 var loginReset = new Option<bool>("--reset") { Description = "Clear the profile's existing login state first" };
+var loginSp = SpOptions();
 var loginCmd = new Command("login", "Re-authenticate an existing profile")
 {
     loginName, loginTenant, loginDeviceCode, loginReset,
+    loginSp.Sp, loginSp.ClientId, loginSp.Secret, loginSp.SecretStdin, loginSp.Cert,
 };
-loginCmd.SetAction(r => Guard(() => new LoginHandler(Store(r), AzCli.Locate(), Console.Out).Run(
-    r.GetValue(loginName)!, r.GetValue(loginTenant), r.GetValue(loginDeviceCode), r.GetValue(loginReset))));
+loginCmd.SetAction(r => Guard(() =>
+{
+    var tenant = r.GetValue(loginTenant);
+    var sp = ServicePrincipalInput.Resolve(
+        r.GetValue(loginSp.Sp), r.GetValue(loginSp.ClientId), tenant,
+        r.GetValue(loginSp.Secret), r.GetValue(loginSp.SecretStdin), r.GetValue(loginSp.Cert), Console.In);
+    return new LoginHandler(Store(r), AzCli.Locate(), Console.Out).Run(
+        r.GetValue(loginName)!, new InteractiveLogin(tenant, r.GetValue(loginDeviceCode)), sp, r.GetValue(loginReset));
+}));
 root.Subcommands.Add(loginCmd);
 
 // --- logout ---------------------------------------------------------

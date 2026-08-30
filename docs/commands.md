@@ -25,6 +25,12 @@ Each profile is a directory `~/.azpm/profiles/<name>/` holding `config/` (the Az
 Creates `profiles/<name>/` and runs `az login` into it. Fails if the profile exists (use
 `login`). A failed first login removes the profile.
 
+**Service principal:** add `--service-principal` (`--sp`), `--client-id <appId>`,
+`--tenant <id>`, and one of `--client-secret <s>` / `--client-secret-stdin` / `--certificate
+<pem>`. The credential is stored at `~/.azpm/profiles/<name>/sp.json` (plaintext, `chmod 600`
+on POSIX — OS-keychain storage is [#9](https://github.com/rockymcclamrock/azpm/issues/9)).
+`azpm ls` marks these `(sp)`.
+
 ## `azpm ls` / `azpm list` `[--json]`
 
 Table of every profile: name, account, tenant, active subscription, status
@@ -66,6 +72,9 @@ parent process, then `$SHELL`, then the platform default.
 Re-runs `az login` in an existing profile. `--reset` clears the profile's Azure state first —
 use it if you need to switch the profile to a different account (plain `az login` *adds* an
 account rather than replacing it).
+
+For a service-principal profile, `azpm login <name>` re-auths silently from the stored
+`sp.json`. Pass `--client-secret <s>` (or `--client-secret-stdin`) to rotate the stored secret.
 
 ## `azpm logout <name>`
 

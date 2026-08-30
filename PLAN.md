@@ -128,7 +128,9 @@ bash/zsh/fish prompt polish revisited if dogfooding needs it.
    browser-profile auto-discovery still deferred.)
 2. ~~**Directory auto-switch**~~ ✅ `azpm local <name>` writes `.azpm`; `azpm init <shell> --auto`
    follows it on `cd` (pwsh/bash/zsh/fish), tracking auto-set profiles in `AZPM_AUTO`.
-3. **Service principals** — `azpm add --service-principal`, cert auth, CI-friendly.
+3. ~~**Service principals**~~ ✅ `azpm add --sp --client-id --tenant (--client-secret |
+   --client-secret-stdin | --certificate)`; credential in `sp.json` (plaintext 0600; keychain =
+   [#9](https://github.com/rockymcclamrock/azpm/issues/9)). `login` re-auths silently / rotates.
 4. ~~**Prompt module**~~ ✅ `azpm prompt [--format]` — env-only, empty+exit-0 when none;
    starship / oh-my-posh / PS1 recipes in `docs/prompt.md`.
 5. ~~**Terraform/SDK export**~~ ✅ `ARM_SUBSCRIPTION_ID` / `ARM_TENANT_ID` / `AZURE_SUBSCRIPTION_ID`

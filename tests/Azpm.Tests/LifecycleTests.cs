@@ -13,7 +13,7 @@ public sealed class LoginHandlerTests
         t.Store.Create("dev", null, null);
         var az = new FakeAzRunner();
 
-        var code = new LoginHandler(t.Store, az, TextWriter.Null).Run("dev", null, false, reset: false);
+        var code = new LoginHandler(t.Store, az, TextWriter.Null).Run("dev", new InteractiveLogin(null, false), null, reset: false);
 
         Assert.Equal(ExitCode.Ok, code);
         Assert.Equal("login", az.Calls.Single().Args[0]);
@@ -25,7 +25,7 @@ public sealed class LoginHandlerTests
     {
         using var t = new TempHome();
         var ex = Assert.Throws<AzpmException>(
-            () => new LoginHandler(t.Store, new FakeAzRunner(), TextWriter.Null).Run("nope", null, false, false));
+            () => new LoginHandler(t.Store, new FakeAzRunner(), TextWriter.Null).Run("nope", new InteractiveLogin(null, false), null, false));
         Assert.Equal(ExitCode.ProfileNotFound, ex.ExitCode);
     }
 
@@ -38,7 +38,7 @@ public sealed class LoginHandlerTests
         File.WriteAllText(Path.Combine(t.Home.ConfigDir("dev"), "leftover.txt"), "x");
 
         var az = new FakeAzRunner { LoginAccount = "new@y.example.com" };
-        new LoginHandler(t.Store, az, TextWriter.Null).Run("dev", null, false, reset: true);
+        new LoginHandler(t.Store, az, TextWriter.Null).Run("dev", new InteractiveLogin(null, false), null, reset: true);
 
         Assert.False(File.Exists(Path.Combine(t.Home.ConfigDir("dev"), "leftover.txt")));
         Assert.Equal("new@y.example.com", t.Store.Load("dev").ActiveSubscription!.User!.Name);
@@ -51,7 +51,7 @@ public sealed class LoginHandlerTests
         t.Store.Create("dev", null, null);
         var ex = Assert.Throws<AzpmException>(
             () => new LoginHandler(t.Store, new FakeAzRunner { ExitCode = 1 }, TextWriter.Null)
-                .Run("dev", null, false, false));
+                .Run("dev", new InteractiveLogin(null, false), null, false));
         Assert.Equal(ExitCode.AzFailed, ex.ExitCode);
     }
 }

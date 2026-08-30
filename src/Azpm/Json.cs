@@ -11,6 +11,25 @@ public sealed class ProfileMeta
     public string? Description { get; set; }
     public DateTimeOffset? LastUsed { get; set; }
     public BrowserMapping? Browser { get; set; }
+
+    /// <summary>"user" (default, interactive) or "service-principal".</summary>
+    public string? Kind { get; set; }
+}
+
+/// <summary>
+/// A service principal's credential (<c>sp.json</c>, sibling of <c>meta.json</c>).
+/// Plaintext for now — see docs/design/service-principals.md and issue #9.
+/// </summary>
+public sealed class ServicePrincipal
+{
+    public required string ClientId { get; set; }
+    public required string TenantId { get; set; }
+
+    /// <summary>"secret" or "certificate".</summary>
+    public required string Auth { get; set; }
+
+    public string? Secret { get; set; }
+    public string? CertificatePath { get; set; }
 }
 
 /// <summary>Which browser + browser-profile <c>azpm portal</c> should launch for this profile.</summary>
@@ -53,4 +72,5 @@ public sealed class AzureUser
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(ProfileMeta))]
 [JsonSerializable(typeof(AzureProfileFile))]
+[JsonSerializable(typeof(ServicePrincipal))]
 internal sealed partial class AzpmJson : JsonSerializerContext;

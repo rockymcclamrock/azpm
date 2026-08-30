@@ -12,13 +12,16 @@ public sealed class LsHandler(ProfileStore store, TextWriter output)
         var rows = store.LoadAll().Select(p =>
         {
             var sub = p.ActiveSubscription;
+            var isSp = p.Meta?.Kind == "service-principal"
+                || string.Equals(sub?.User?.Type, "servicePrincipal", StringComparison.OrdinalIgnoreCase);
             return new LsRow(
                 p.Name,
                 p.Name == current,
                 sub?.User?.Name,
                 sub?.TenantDefaultDomain ?? sub?.TenantId,
                 sub?.Name,
-                p.Status);
+                p.Status,
+                isSp);
         }).ToList();
 
         if (json)
@@ -35,8 +38,8 @@ public sealed class LsHandler(ProfileStore store, TextWriter output)
 
         var table = new TextTable("", "NAME", "ACCOUNT", "TENANT", "SUBSCRIPTION", "STATUS");
         foreach (var r in rows)
-            table.AddRow(r.Current ? "*" : "", r.Name, r.Account ?? "-", r.Tenant ?? "-",
-                r.Subscription ?? "-", r.Status);
+            table.AddRow(r.Current ? "*" : "", r.Name + (r.ServicePrincipal ? " (sp)" : ""),
+                r.Account ?? "-", r.Tenant ?? "-", r.Subscription ?? "-", r.Status);
         table.RenderTo(output);
         return ExitCode.Ok;
     }
@@ -48,7 +51,8 @@ public sealed record LsRow(
     string? Account,
     string? Tenant,
     string? Subscription,
-    string Status);
+    string Status,
+    bool ServicePrincipal);
 
 [JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(List<LsRow>))]
