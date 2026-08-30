@@ -79,7 +79,8 @@ public static class ShellIntegration
             case ShellKind.Pwsh or ShellKind.PowerShell:
                 return $$"""
                     function azpm {
-                        if ($args.Count -ge 1 -and ($args[0] -eq 'use' -or $args[0] -eq 'deactivate')) {
+                        $__head = $args | Select-Object -First 3
+                        if (($__head -contains 'use') -or ($__head -contains 'deactivate')) {
                             $__azpm = & {{PoshLit(exePath)}} @args --emit
                             if ($LASTEXITCODE -eq 0 -and $__azpm) { ($__azpm -join "`n") | Invoke-Expression }
                             elseif ($__azpm) { $__azpm }
@@ -93,7 +94,7 @@ public static class ShellIntegration
             case ShellKind.Fish:
                 return $$"""
                     function azpm
-                        if test "$argv[1]" = use -o "$argv[1]" = deactivate
+                        if contains -- use $argv[1..3]; or contains -- deactivate $argv[1..3]
                             {{ShLit(exePath)}} $argv --emit | source
                         else
                             {{ShLit(exePath)}} $argv
@@ -105,11 +106,12 @@ public static class ShellIntegration
             case ShellKind.Bash or ShellKind.Zsh:
                 return $$"""
                     azpm() {
-                        if [ "$1" = "use" ] || [ "$1" = "deactivate" ]; then
-                            eval "$(command {{ShLit(exePath)}} "$@" --emit)"
-                        else
-                            command {{ShLit(exePath)}} "$@"
-                        fi
+                        case " $1 $2 $3 " in
+                            *" use "*|*" deactivate "*)
+                                eval "$(command {{ShLit(exePath)}} "$@" --emit)" ;;
+                            *)
+                                command {{ShLit(exePath)}} "$@" ;;
+                        esac
                     }
 
                     """;

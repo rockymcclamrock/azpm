@@ -12,10 +12,16 @@ public sealed class LogoutHandler(ProfileStore store, IAzRunner az, TextWriter o
             return ExitCode.Ok;
         }
 
-        // az logout exits non-zero when there's nothing to log out — not an error for us.
-        az.Run(profile.ConfigDir, ["logout"]);
+        var code = az.Run(profile.ConfigDir, ["logout"]);
         store.TouchLastUsed(name);
-        output.WriteLine($"Logged out of '{name}'.");
+
+        var after = store.Load(name);
+        if (after.Status != "ready")
+            output.WriteLine($"Logged out of '{name}'.");
+        else if (code == 0)
+            output.WriteLine($"Signed out the active account in '{name}' (other accounts remain).");
+        else
+            output.WriteLine($"'az logout' exited {code}; '{name}' may still be signed in.");
         return ExitCode.Ok;
     }
 }
