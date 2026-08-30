@@ -1,32 +1,33 @@
 # azpm — Azure Profile Manager
 
-> **Status: early development.** Building toward `v0.1.0-pre` — see [SPEC.md](SPEC.md) and
-> [PLAN.md](PLAN.md). Working today: `add`, `ls`, `path`, `exec`, `shell`, `current`.
+> **Status: early development** (`v0.2.0-pre`) — see [SPEC.md](SPEC.md), [PLAN.md](PLAN.md),
+> [docs/commands.md](docs/commands.md).
 
 `aws-vault` / `granted`, but for Azure. Named, isolated Azure CLI login profiles you switch
 between instantly — no re-login, no clobbering your other tenant.
 
 ```
-azpm add dev            # az login into an isolated profile
+azpm add dev                     # az login into an isolated profile
 azpm add prod
-azpm shell prod         # subshell with the prod profile active + prompt marker
-azpm exec dev -- az group list      # run one command in a profile
-azpm ls                 # see every profile: account, tenant, subscription
-azpm path prod          # print the profile's AZURE_CONFIG_DIR
-azpm current            # which profile is this shell using
+azpm shell prod                  # subshell with the prod profile active + prompt marker
+azpm exec dev -- az group list   # run one command in a profile
+azpm ls                          # every profile: account, tenant, subscription
+azpm portal prod                 # open the Portal in prod's browser profile, right tenant
 ```
-
-Full command reference: [docs/commands.md](docs/commands.md).
 
 ## In-place switching
 
 ```powershell
 azpm init powershell | Out-String | Invoke-Expression   # add to $PROFILE
-azpm use prod            # sets AZURE_CONFIG_DIR + AZPM_PROFILE in this shell
+azpm use prod            # sets AZURE_CONFIG_DIR / AZPM_PROFILE / ARM_* in this shell
 azpm deactivate
 ```
 
-(bash/zsh: `eval "$(azpm init bash)"` · fish: `azpm init fish | source`)
+bash/zsh: `eval "$(azpm init bash)"` · fish: `azpm init fish | source`
+
+Add `--auto` to `init` and the shell follows `.azpm` files as you `cd`
+(`azpm local prod` writes one). `azpm prompt` feeds your prompt — see
+[docs/prompt.md](docs/prompt.md).
 
 ## Install
 
@@ -55,9 +56,9 @@ independent logins** (different tenants, different accounts) side by side.
 
 ## Scope
 
-v0.1 covers the Azure CLI (`az`) with interactive user accounts. Azure Portal browser
-integration, Azure PowerShell, service principals, and directory auto-switch are on the roadmap
-in [PLAN.md](PLAN.md).
+Covers the Azure CLI (`az`) with interactive user accounts, plus Portal browser integration and
+per-directory profiles. Service principals and Azure PowerShell context isolation are on the
+roadmap in [PLAN.md](PLAN.md).
 
 ## License
 
