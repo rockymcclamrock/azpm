@@ -129,7 +129,8 @@ bash/zsh/fish prompt polish revisited if dogfooding needs it.
 2. ~~**Directory auto-switch**~~ ✅ `azpm local <name>` writes `.azpm`; `azpm init <shell> --auto`
    follows it on `cd` (pwsh/bash/zsh/fish), tracking auto-set profiles in `AZPM_AUTO`.
 3. **Service principals** — `azpm add --service-principal`, cert auth, CI-friendly.
-4. **Prompt module** — starship / oh-my-posh segment; richer `shell` prompt.
+4. ~~**Prompt module**~~ ✅ `azpm prompt [--format]` — env-only, empty+exit-0 when none;
+   starship / oh-my-posh / PS1 recipes in `docs/prompt.md`.
 5. ~~**Terraform/SDK export**~~ ✅ `ARM_SUBSCRIPTION_ID` / `ARM_TENANT_ID` / `AZURE_SUBSCRIPTION_ID`
    set by `exec`/`shell`/`use` from the active subscription when logged in.
 6. **Azure PowerShell isolation** — redirect `AzureRmContext`.

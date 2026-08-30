@@ -39,6 +39,11 @@ Prints the profile's `AZURE_CONFIG_DIR`. Handy for one-offs:
 
 Prints the active profile (`AZPM_PROFILE`); exits non-zero if none.
 
+## `azpm prompt [--format '<tmpl>']`
+
+Prompt-friendly variant: prints the active profile (`{}` in `--format` is the name), **nothing**
+when none, always exits 0. Env-only, safe to call every prompt. Recipes: [docs/prompt.md](prompt.md).
+
 ## `azpm exec <name> -- <cmd> [args...]`
 
 Runs one command with the profile's environment set (`AZURE_CONFIG_DIR`, `AZPM_PROFILE`,

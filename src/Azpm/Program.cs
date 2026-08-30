@@ -56,6 +56,12 @@ var currentCmd = new Command("current", "Print the active profile (from AZPM_PRO
 currentCmd.SetAction(_ => Guard(() => new CurrentHandler(Console.Out, Console.Error).Run()));
 root.Subcommands.Add(currentCmd);
 
+// --- prompt ------------------------------------------------------------
+var promptFormat = new Option<string?>("--format") { Description = "Template with {} for the profile name (default: just the name)" };
+var promptCmd = new Command("prompt", "Prompt-friendly active-profile string (empty + exit 0 when none)") { promptFormat };
+promptCmd.SetAction(r => Guard(() => new PromptHandler(Console.Out).Run(r.GetValue(promptFormat))));
+root.Subcommands.Add(promptCmd);
+
 // --- exec --------------------------------------------------------------
 var execName = new Argument<string>("name") { Description = "Profile name" };
 var execCommand = new Argument<string[]>("command")
