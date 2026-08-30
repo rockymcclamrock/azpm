@@ -138,9 +138,28 @@ root.Subcommands.Add(deactCmd);
 
 // --- init ---------------------------------------------------------
 var initShell = new Argument<string>("shell") { Description = "pwsh | powershell | bash | zsh | fish" };
-var initCmd = new Command("init", "Print a shell wrapper enabling 'azpm use' / 'azpm deactivate'") { initShell };
-initCmd.SetAction(r => Guard(() => new InitHandler(Console.Out).Run(r.GetValue(initShell)!)));
+var initAuto = new Option<bool>("--auto") { Description = "Also add a hook that follows .azpm files on cd" };
+var initCmd = new Command("init", "Print a shell wrapper enabling 'azpm use' / 'azpm deactivate'") { initShell, initAuto };
+initCmd.SetAction(r => Guard(() => new InitHandler(Console.Out).Run(r.GetValue(initShell)!, r.GetValue(initAuto))));
 root.Subcommands.Add(initCmd);
+
+// --- local -------------------------------------------------------
+var localName = new Argument<string?>("name") { Description = "Profile to pin to this directory", Arity = ArgumentArity.ZeroOrOne };
+var localResolve = new Option<bool>("--resolve") { Description = "Print the resolved profile for the cwd (used by 'azpm init --auto')" };
+var localUnset = new Option<bool>("--unset") { Description = "Remove this directory's .azpm file" };
+var localCmd = new Command("local", "Pin a profile to the current directory tree via a .azpm file")
+{
+    localName, localResolve, localUnset,
+};
+localCmd.SetAction(r => Guard(() =>
+{
+    var h = new LocalHandler(Store(r), Console.Out, Console.Error);
+    var n = r.GetValue(localName);
+    if (r.GetValue(localResolve)) return h.Resolve();
+    if (r.GetValue(localUnset)) return h.Unset();
+    return n is null ? h.Show() : h.Set(n);
+}));
+root.Subcommands.Add(localCmd);
 
 // --- portal ------------------------------------------------------
 var portalName = new Argument<string>("name") { Description = "Profile name" };

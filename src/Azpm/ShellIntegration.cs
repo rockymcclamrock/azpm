@@ -122,6 +122,69 @@ public static class ShellIntegration
         }
     }
 
+    /// <summary>
+    /// The <c>azpm init --auto</c> directory hook: on each directory change, reconcile the shell
+    /// to the nearest <c>.azpm</c> file (like nvm/direnv). Auto-set profiles are tracked in
+    /// <c>AZPM_AUTO</c> so a manual <c>azpm use</c> isn't clobbered.
+    /// </summary>
+    public static string AutoHookScript(ShellKind kind, string exePath) => kind switch
+    {
+        ShellKind.Pwsh or ShellKind.PowerShell => $$"""
+            $global:__azpm_pwd = $null
+            $global:__azpm_prompt_base = $function:prompt
+            function prompt {
+                if ($PWD.Path -ne $global:__azpm_pwd) {
+                    $global:__azpm_pwd = $PWD.Path
+                    $want = & {{PoshLit(exePath)}} local --resolve 2>$null
+                    if ($LASTEXITCODE -ne 0) { $want = '' }
+                    if ($want -ne $env:AZPM_PROFILE) {
+                        if ($want) { azpm use $want | Out-Null; $env:AZPM_AUTO = $want }
+                        elseif ($env:AZPM_PROFILE -and $env:AZPM_AUTO -eq $env:AZPM_PROFILE) {
+                            azpm deactivate | Out-Null; $env:AZPM_AUTO = $null
+                        }
+                    }
+                }
+                & $global:__azpm_prompt_base
+            }
+
+            """,
+        ShellKind.Fish => $$"""
+            function __azpm_auto --on-variable PWD
+                set -l want ({{ShLit(exePath)}} local --resolve 2>/dev/null)
+                if test "$want" != "$AZPM_PROFILE"
+                    if test -n "$want"
+                        azpm use $want >/dev/null; set -gx AZPM_AUTO $want
+                    else if test -n "$AZPM_PROFILE" -a "$AZPM_AUTO" = "$AZPM_PROFILE"
+                        azpm deactivate >/dev/null; set -e AZPM_AUTO
+                    end
+                end
+            end
+            __azpm_auto
+
+            """,
+        _ => $$"""
+            __azpm_auto() {
+                [ "$PWD" = "$__azpm_pwd" ] && return
+                __azpm_pwd="$PWD"
+                local want
+                want="$(command {{ShLit(exePath)}} local --resolve 2>/dev/null)" || want=""
+                if [ "$want" != "$AZPM_PROFILE" ]; then
+                    if [ -n "$want" ]; then
+                        eval "$(command {{ShLit(exePath)}} use "$want" --emit)"; export AZPM_AUTO="$want"
+                    elif [ -n "$AZPM_PROFILE" ] && [ "$AZPM_AUTO" = "$AZPM_PROFILE" ]; then
+                        eval "$(command {{ShLit(exePath)}} deactivate --emit)"; unset AZPM_AUTO
+                    fi
+                fi
+            }
+            case "${PROMPT_COMMAND:-}" in
+                *__azpm_auto*) ;;
+                *) PROMPT_COMMAND="__azpm_auto${PROMPT_COMMAND:+; $PROMPT_COMMAND}" ;;
+            esac
+            __azpm_auto
+
+            """,
+    };
+
     /// <summary>PowerShell single-quoted literal.</summary>
     private static string PoshLit(string s) => "'" + s.Replace("'", "''") + "'";
 

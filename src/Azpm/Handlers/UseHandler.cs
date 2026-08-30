@@ -35,12 +35,14 @@ public sealed class DeactivateHandler(TextWriter output)
 /// <summary><c>azpm init &lt;shell&gt;</c> — print the wrapper function to eval in a shell profile.</summary>
 public sealed class InitHandler(TextWriter output)
 {
-    public int Run(string shellName)
+    public int Run(string shellName, bool auto)
     {
         var kind = Shells.Parse(shellName);
         var exe = Environment.ProcessPath
             ?? throw new AzpmException(ExitCode.UsageError, "cannot determine the azpm executable path");
         output.Write(ShellIntegration.InitScript(kind, exe));
+        if (auto)
+            output.Write(ShellIntegration.AutoHookScript(kind, exe));
         return ExitCode.Ok;
     }
 }

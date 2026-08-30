@@ -109,3 +109,23 @@ azpm deactivate       # clears them (back to the default ~/.azure)
 
 Without the `init` wrapper, `azpm use <name>` just prints the script — pipe it to your shell's
 eval yourself. `cmd` has no wrapper; use `azpm shell` there.
+
+## `azpm local [<name>] [--unset]`  +  `azpm init <shell> --auto`
+
+Per-directory profiles, like `.nvmrc`. `azpm local prod` writes a `.azpm` file (one line: the
+profile name) in the current directory; it applies to that directory and everything under it.
+
+```
+cd ~/work/acme && azpm local prod      # writes ~/work/acme/.azpm
+azpm local                             # show the profile resolved for the cwd
+azpm local --unset                     # remove ./.azpm
+```
+
+Add `--auto` to `init` and the shell follows `.azpm` files as you `cd` (nvm/direnv style):
+
+```bash
+eval "$(azpm init bash --auto)"
+```
+
+Auto-switched profiles are tracked in `AZPM_AUTO`, so a manual `azpm use` in the same tree
+isn't clobbered — but leaving a tree with no `.azpm` clears an auto-set profile.
