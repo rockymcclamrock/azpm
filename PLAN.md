@@ -68,19 +68,31 @@ bash/zsh/fish prompt polish revisited if dogfooding needs it.
 
 ---
 
-## Phase 3 — `use` + `init` + `current`
+## Phase 3 — `use` + `init` + `current`  ✅ (issue #4)
 
-- [ ] `azpm current` — print `AZPM_PROFILE` or exit non-zero.
-- [ ] `azpm use <name>` — emit env-export lines for the detected shell; detect the `azpm init`
-      wrapper (env marker) and print a setup hint when unwrapped.
-- [ ] `azpm init pwsh` — emit the PowerShell function wrapper (dot-source in `$PROFILE`).
-      Then `bash` / `zsh` / `fish`.
-- [ ] `azpm deactivate` (via the init wrapper) — restore the pre-`use` env.
-- [ ] Tests: golden-file the `init` output per shell; round-trip `use` → `deactivate` in a real
-      pwsh/bash child.
+- [x] `azpm current` — print `AZPM_PROFILE` or exit non-zero.
+- [x] `azpm use <name>` — emits env-export lines for the detected shell (`--emit` for the
+      wrapper); prints a `azpm init <shell>` hint when not wired up.
+- [x] `azpm init pwsh|powershell|bash|zsh|fish` — emits the wrapper function. cmd rejected
+      (use `azpm shell`).
+- [x] `azpm deactivate` — clears the profile env (does not restore a prior `use`).
+- [x] Tests: `UseScript` / `InitScript` per shell; hint behavior. Round-trip verified manually
+      in pwsh (`use` → `current` → `deactivate`).
 
-**Demo:** `azpm init pwsh >> $PROFILE`; new shell; `azpm use prod`; prompt shows `prod`;
-`azpm deactivate`.
+**Demo:** `azpm init powershell | iex`; `azpm use g5` → `$env:AZPM_PROFILE` set in place;
+`azpm deactivate`. ✅
+
+## Phase 4 — Lifecycle polish  ✅ (issue #5)
+
+- [x] `azpm login <name> [--tenant] [--device-code] [--reset]` — re-auth; `--reset` wipes prior
+      az state first; warns if the account changed (S1 additive-login finding).
+- [x] `azpm logout <name>` — `az logout`, keeps the profile; no-op if already logged out.
+- [x] `azpm rm <name> [--yes]` — `[y/N]` prompt unless `--yes`; `remove` alias.
+- [x] `add` now delegates to `LoginHandler`.
+- [x] Consistent exit codes via `Guard()`.
+- [x] Tests: login/logout/rm with `FakeAzRunner` + scripted stdin. 65 total.
+
+**Demo:** `add` → `use` → `logout` (`ls` shows logged out) → `login` → `rm`. ✅
 
 ---
 

@@ -20,6 +20,13 @@ public sealed class FakeAzRunner : IAzRunner
     {
         Calls.Add((configDir, [.. args]));
 
+        if (args is ["logout", ..] && SimulateLoginWritesProfile)
+        {
+            var f = Path.Combine(configDir, "azureProfile.json");
+            if (File.Exists(f)) File.Delete(f);
+            return ExitCode;
+        }
+
         if (ExitCode == 0 && args.Count > 0 && args[0] == "login" && SimulateLoginWritesProfile)
         {
             Directory.CreateDirectory(configDir);

@@ -5,33 +5,16 @@ public sealed class AddHandler(ProfileStore store, IAzRunner az, TextWriter outp
 {
     public int Run(string name, string? tenant, bool deviceCode, string? description)
     {
-        var profile = store.Create(name, description, tenant);
-
-        var loginArgs = new List<string> { "login" };
-        if (!string.IsNullOrWhiteSpace(tenant))
+        store.Create(name, description, tenant);
+        try
         {
-            loginArgs.Add("--tenant");
-            loginArgs.Add(tenant);
+            return new LoginHandler(store, az, output).Run(name, tenant, deviceCode, reset: false);
         }
-        if (deviceCode)
-            loginArgs.Add("--use-device-code");
-
-        output.WriteLine($"Logging in to profile '{name}'...");
-        var code = az.Run(profile.ConfigDir, loginArgs);
-        if (code != 0)
+        catch (AzpmException)
         {
-            // Roll back the half-created profile so a failed login leaves nothing behind.
+            // A failed first login leaves nothing behind.
             store.Delete(name);
-            throw new AzpmException(ExitCode.AzFailed,
-                $"'az login' failed (exit {code}); profile '{name}' was not created");
+            throw;
         }
-
-        store.TouchLastUsed(name);
-        var loaded = store.Load(name);
-        var sub = loaded.ActiveSubscription;
-        output.WriteLine(sub is null
-            ? $"Profile '{name}' created."
-            : $"Profile '{name}' ready: {sub.User?.Name} @ {sub.TenantDefaultDomain ?? sub.TenantId} ({sub.Name}).");
-        return ExitCode.Ok;
     }
 }
