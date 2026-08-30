@@ -1,0 +1,27 @@
+# .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+publish/
+artifacts/
+*.user
+*.suo
+.vs/
+
+# Rider / VS Code
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Native AOT / publish output
+*.pdb
+*.nupkg
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local scratch
+/scratch/
+*.local
