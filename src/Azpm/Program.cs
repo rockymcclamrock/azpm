@@ -142,4 +142,17 @@ var initCmd = new Command("init", "Print a shell wrapper enabling 'azpm use' / '
 initCmd.SetAction(r => Guard(() => new InitHandler(Console.Out).Run(r.GetValue(initShell)!)));
 root.Subcommands.Add(initCmd);
 
+// --- portal ------------------------------------------------------
+var portalName = new Argument<string>("name") { Description = "Profile name" };
+var portalPath = new Argument<string?>("path") { Description = "Portal path / blade (optional)", Arity = ArgumentArity.ZeroOrOne };
+var portalBrowser = new Option<string?>("--browser") { Description = "edge | chrome | firefox | default (persists)" };
+var portalBrowserProfile = new Option<string?>("--browser-profile") { Description = "Browser-profile name / directory (persists)" };
+var portalCmd = new Command("portal", "Open the Azure Portal in the profile's browser context")
+{
+    portalName, portalPath, portalBrowser, portalBrowserProfile,
+};
+portalCmd.SetAction(r => Guard(() => new PortalHandler(Store(r), new UrlOpener(), Console.Out, Console.Error).Run(
+    r.GetValue(portalName)!, r.GetValue(portalPath), r.GetValue(portalBrowser), r.GetValue(portalBrowserProfile))));
+root.Subcommands.Add(portalCmd);
+
 return root.Parse(args).Invoke();

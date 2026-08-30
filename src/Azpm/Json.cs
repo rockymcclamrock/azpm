@@ -10,6 +10,17 @@ public sealed class ProfileMeta
     public string? TenantHint { get; set; }
     public string? Description { get; set; }
     public DateTimeOffset? LastUsed { get; set; }
+    public BrowserMapping? Browser { get; set; }
+}
+
+/// <summary>Which browser + browser-profile <c>azpm portal</c> should launch for this profile.</summary>
+public sealed class BrowserMapping
+{
+    /// <summary>edge | chrome | firefox | default</summary>
+    public required string Kind { get; set; }
+
+    /// <summary>Browser-profile name / directory (not used for <c>default</c>).</summary>
+    public string? Profile { get; set; }
 }
 
 /// <summary>The subset of az's <c>azureProfile.json</c> that azpm reads.</summary>

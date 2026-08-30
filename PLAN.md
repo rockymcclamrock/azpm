@@ -123,8 +123,9 @@ bash/zsh/fish prompt polish revisited if dogfooding needs it.
 
 ## After v0.1 — prioritized backlog
 
-1. **Portal browser integration** (#2 pain) — launch a URL in a named browser profile / Firefox
-   container / Edge workspace tied to the azpm profile.
+1. ~~**Portal browser integration**~~ ✅ `azpm portal <name>` — Edge/Chrome `--profile-directory`,
+   Firefox `-P`, tenant-pinned URL, mapping persisted in `meta.json`. (Firefox *containers* and
+   browser-profile auto-discovery still deferred.)
 2. **Directory auto-switch** — `.azpm` file + the `init` hook reacts on `cd`.
 3. **Service principals** — `azpm add --service-principal`, cert auth, CI-friendly.
 4. **Prompt module** — starship / oh-my-posh segment; richer `shell` prompt.

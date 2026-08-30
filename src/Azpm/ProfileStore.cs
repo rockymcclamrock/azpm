@@ -65,11 +65,15 @@ public sealed class ProfileStore(AzpmHome home)
         Directory.Delete(Home.ProfileDir(name), recursive: true);
     }
 
-    public void TouchLastUsed(string name)
+    public void TouchLastUsed(string name) =>
+        UpdateMeta(name, m => m.LastUsed = DateTimeOffset.UtcNow);
+
+    /// <summary>Reads <c>meta.json</c>, applies <paramref name="mutate"/>, writes it back. No-op if absent.</summary>
+    public void UpdateMeta(string name, Action<ProfileMeta> mutate)
     {
         var meta = ReadJson(Home.MetaPath(name), AzpmJson.Default.ProfileMeta);
         if (meta is null) return;
-        meta.LastUsed = DateTimeOffset.UtcNow;
+        mutate(meta);
         WriteJson(Home.MetaPath(name), meta, AzpmJson.Default.ProfileMeta);
     }
 

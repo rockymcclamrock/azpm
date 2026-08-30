@@ -67,6 +67,21 @@ Runs `az logout` in the profile. The profile directory and `meta.json` stay; sta
 
 Deletes the profile directory. Prompts `[y/N]` unless `--yes`.
 
+## `azpm portal <name> [path] [--browser <b>] [--browser-profile <p>]`
+
+Opens `https://portal.azure.com/#@<tenant>` (the profile's active-subscription tenant) — plus an
+optional blade `path` — in a browser profile bound to this azpm profile. Browser profiles keep
+their own cookies, so once you've signed in there it stays signed in.
+
+```
+azpm portal prod --browser edge --browser-profile "Profile 2"   # bind (persists to meta.json) + open
+azpm portal prod                                                # reuse the binding
+azpm portal prod /resource/subscriptions                        # deep-link
+```
+
+`--browser`: `edge` | `chrome` | `firefox` | `default`. With no binding it uses the OS default
+browser and prints a hint. Firefox uses separate profiles (`-P`), not containers.
+
 ## `azpm use <name> [--shell <s>]`  +  `azpm init <shell>`
 
 In-place switching for the *current* shell (no subshell). One-time setup — add to your shell
