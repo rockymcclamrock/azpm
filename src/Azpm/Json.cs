@@ -35,7 +35,13 @@ public sealed class ServicePrincipal
     /// <summary>"secret" or "certificate".</summary>
     public required string Auth { get; set; }
 
+    /// <summary>Plaintext secret (POSIX, or pre-DPAPI Windows files). Prefer <see cref="SecretProtected"/>.</summary>
     public string? Secret { get; set; }
+
+    /// <summary>Base64 Windows-DPAPI blob of the secret. Written on Windows; decrypted into
+    /// <see cref="Secret"/> in memory on read.</summary>
+    public string? SecretProtected { get; set; }
+
     public string? CertificatePath { get; set; }
 }
 

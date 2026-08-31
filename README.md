@@ -180,8 +180,9 @@ azpm prompt --format ' [az:{}]'     # active profile, for your shell prompt (doc
 ```
 
 **Service principals:** `azpm add ci --sp --client-id <appId> --tenant <id> --client-secret <s>`
-(or `--client-secret-stdin`, or `--certificate <pem>`). Stored at
-`~/.azpm/profiles/ci/sp.json` (`chmod 600`); `azpm login ci` re-auths silently.
+(or `--client-secret-stdin`, or `--certificate <pem>`). Stored at `~/.azpm/profiles/ci/sp.json`
+— DPAPI-encrypted on Windows, `chmod 600` plaintext on macOS/Linux ([SECURITY.md](SECURITY.md)).
+`azpm login ci` re-auths silently.
 
 `exec` / `shell` / `use` also set `ARM_SUBSCRIPTION_ID`, `ARM_TENANT_ID`,
 `AZURE_SUBSCRIPTION_ID` from the active subscription, so Terraform and the Azure SDKs pick up

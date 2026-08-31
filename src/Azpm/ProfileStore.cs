@@ -106,18 +106,49 @@ public sealed class ProfileStore(AzpmHome home)
 
     public string SpPath(string name) => Path.Combine(Home.ProfileDir(name), "sp.json");
 
-    public ServicePrincipal? ReadServicePrincipal(string name) =>
-        ReadJson(SpPath(name), AzpmJson.Default.ServicePrincipal);
+    public ServicePrincipal? ReadServicePrincipal(string name)
+    {
+        var sp = ReadJson(SpPath(name), AzpmJson.Default.ServicePrincipal);
+        if (sp is { SecretProtected: { Length: > 0 } enc } && OperatingSystem.IsWindows())
+        {
+            try
+            {
+                sp.Secret = System.Text.Encoding.UTF8.GetString(
+                    Dpapi.Unprotect(Convert.FromBase64String(enc)));
+            }
+            catch (Exception ex) when (ex is FormatException or System.ComponentModel.Win32Exception)
+            {
+                throw new AzpmException(ExitCode.UsageError,
+                    $"could not decrypt the stored secret for '{name}' (was it copied from another machine or user?)");
+            }
+        }
+        return sp;
+    }
 
     /// <summary>
-    /// Writes <c>sp.json</c>. 0600 on POSIX. On Windows azpm sets no explicit ACL — the file
-    /// inherits <c>~/.azpm</c>'s (current user + Administrators/SYSTEM); see issue #17. Plaintext
-    /// pending the OS keychain (#9).
+    /// Writes <c>sp.json</c>. On Windows the secret is DPAPI-encrypted at rest (per-user, no key
+    /// management). On POSIX it's plaintext, <c>0600</c>. The OS keychain (#9) supersedes both.
+    /// The passed <paramref name="sp"/> is not modified.
     /// </summary>
     public void WriteServicePrincipal(string name, ServicePrincipal sp)
     {
+        var onDisk = new ServicePrincipal
+        {
+            ClientId = sp.ClientId,
+            TenantId = sp.TenantId,
+            Auth = sp.Auth,
+            Secret = sp.Secret,
+            CertificatePath = sp.CertificatePath,
+        };
+        if (OperatingSystem.IsWindows() && onDisk.Secret is { Length: > 0 } plain)
+        {
+            onDisk.SecretProtected = Convert.ToBase64String(
+                Dpapi.Protect(System.Text.Encoding.UTF8.GetBytes(plain)));
+            onDisk.Secret = null;
+        }
+
         var path = SpPath(name);
-        WriteJson(path, sp, AzpmJson.Default.ServicePrincipal);
+        WriteJson(path, onDisk, AzpmJson.Default.ServicePrincipal);
         if (!OperatingSystem.IsWindows())
             File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
         UpdateMeta(name, m => m.Kind = "service-principal");

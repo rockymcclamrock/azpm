@@ -45,8 +45,9 @@ Current: **`v0.2.2-pre`**, 21 commands, 121 tests, CI green on win/mac/linux.
 | 13b | `.azpm` trust model | ✅ `~/.azpm/trust.json` gate + `azpm local --allow` + `init --fullauto` opt-out |
 | 14 | `Load` name / `--browser-profile` / temp perms | ✅ all three |
 | 16 | `import` `string.Replace` path bug | ✅ `Path.GetRelativePath` + skip reparse points |
-| 17 | SP secret on argv + false Windows-ACL claim | ⏳ comment/docs fixed; argv + explicit ACL **deferred** (waiting on #9) |
+| 17 | SP secret on argv + false Windows-ACL claim | ⏳ docs fixed; **SP secret now DPAPI-encrypted at rest on Windows** (down-payment on #9); argv exposure still open — `az` no longer takes `-p @file` for secrets, needs a stdin-to-prompt spike |
 | 18 | SECURITY.md / threat model | ✅ `SECURITY.md` |
+| 19 | per-profile MCP opt-out | ✅ `azpm mcp hide/show` |
 
 ## Before making the repo public
 
@@ -64,8 +65,11 @@ Current: **`v0.2.2-pre`**, 21 commands, 121 tests, CI green on win/mac/linux.
 
 - [ ] **Dogfood** on the real dev/prod tenants; log friction to `FEEDBACK.md`.
 - [ ] [#17](https://github.com/rockymcclamrock/azpm/issues/17) — SP secret off the `az login`
-      argv (`-p @file` / env var — needs an `az` capability check) + explicit Windows ACL.
-      Deferred pending #9; do the cheap half if #9 slips.
+      argv. `az` dropped `-p @file` for secrets; the remaining path is piping the secret to
+      `az login --service-principal`'s stdin prompt (no `-p`). Needs a spike to confirm `az`
+      consumes it non-interactively. (At-rest encryption done on Windows via DPAPI.)
+- [ ] [#9](https://github.com/rockymcclamrock/azpm/issues/9) — SP secrets → OS keychain.
+      Windows DPAPI landed as an interim; the remaining work is macOS Keychain / libsecret.
 - [ ] [#7](https://github.com/rockymcclamrock/azpm/issues/7) — run `shell` + `init` on a real
       Linux/macOS box (bash/zsh/fish paths are built + unit-tested, never executed). Now also
       covers the trust-gate hook branches (exit-5 nudge).
@@ -73,7 +77,6 @@ Current: **`v0.2.2-pre`**, 21 commands, 121 tests, CI green on win/mac/linux.
       `& C:\src\azp\scratch\s1\block6.ps1` after a restart, then delete `scratch/s1`.
 - [ ] [#10](https://github.com/rockymcclamrock/azpm/issues/10) — Azure PowerShell isolation
       (needs a machine with `Az.Accounts`; first check if it already honors `AZURE_CONFIG_DIR`).
-- [ ] [#9](https://github.com/rockymcclamrock/azpm/issues/9) — SP secrets → OS keychain.
 
 ## Later
 

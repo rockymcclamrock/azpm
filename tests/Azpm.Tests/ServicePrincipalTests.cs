@@ -126,4 +126,43 @@ public sealed class ServicePrincipalLoginTests
 
         Assert.Contains("ci (sp)", sw.ToString());
     }
+
+    [Fact]
+    public void Write_read_round_trips_the_secret_on_every_platform()
+    {
+        using var t = new TempHome();
+        t.Store.Create("ci", null, null);
+        var sp = Secret(secret: "correct horse battery staple");
+
+        t.Store.WriteServicePrincipal("ci", sp);
+
+        Assert.Equal("correct horse battery staple", t.Store.ReadServicePrincipal("ci")!.Secret);
+        Assert.Equal("correct horse battery staple", sp.Secret); // caller's object untouched
+    }
+
+    [Fact]
+    public void On_windows_the_plaintext_secret_is_not_on_disk()
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        using var t = new TempHome();
+        t.Store.Create("ci", null, null);
+        t.Store.WriteServicePrincipal("ci", Secret(secret: "SUPERSECRET-VALUE-123"));
+
+        var raw = File.ReadAllText(t.Store.SpPath("ci"));
+        Assert.DoesNotContain("SUPERSECRET-VALUE-123", raw);
+        Assert.Contains("secretProtected", raw);
+    }
+
+    [Fact]
+    public void A_pre_dpapi_plaintext_sp_json_still_reads()
+    {
+        using var t = new TempHome();
+        t.Store.Create("ci", null, null);
+        File.WriteAllText(t.Store.SpPath("ci"),
+            "{\"clientId\":\"app\",\"tenantId\":\"ten\",\"auth\":\"secret\",\"secret\":\"legacy-plain\"}");
+
+        Assert.Equal("legacy-plain", t.Store.ReadServicePrincipal("ci")!.Secret);
+    }
 }
