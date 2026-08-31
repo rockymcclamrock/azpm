@@ -7,7 +7,18 @@ namespace Azpm.Handlers;
 public interface IUrlOpener
 {
     /// <summary>Returns true if launched in the requested browser, false if it fell back to the OS default.</summary>
-    bool Open(BrowserKind kind, string? browserProfile, string url);
+    bool Open(BrowserKind kind, string? browserProfileDir, string url);
+}
+
+/// <summary>Enumerates a Chromium browser's profiles (from its <c>Local State</c>).</summary>
+public interface IBrowserProfiles
+{
+    IReadOnlyList<BrowserProfile> List(BrowserKind kind);
+}
+
+public sealed class SystemBrowserProfiles : IBrowserProfiles
+{
+    public IReadOnlyList<BrowserProfile> List(BrowserKind kind) => Browsers.ListProfiles(kind);
 }
 
 public sealed class UrlOpener : IUrlOpener
@@ -33,8 +44,35 @@ public sealed class UrlOpener : IUrlOpener
 }
 
 /// <summary><c>azpm portal &lt;name&gt;</c> — open the Azure Portal in the profile's browser context.</summary>
-public sealed class PortalHandler(ProfileStore store, IUrlOpener opener, TextWriter output, TextWriter error)
+public sealed class PortalHandler(
+    ProfileStore store, IUrlOpener opener, TextWriter output, TextWriter error, IBrowserProfiles? browsers = null)
 {
+    private readonly IBrowserProfiles _browsers = browsers ?? new SystemBrowserProfiles();
+
+    /// <summary><c>azpm portal --browsers</c> — list the Chromium browser profiles azpm can see.</summary>
+    public int ListBrowsers()
+    {
+        var any = false;
+        foreach (var kind in new[] { BrowserKind.Edge, BrowserKind.Chrome, BrowserKind.Brave })
+        {
+            var profiles = _browsers.List(kind);
+            if (profiles.Count == 0)
+                continue;
+            any = true;
+            output.WriteLine($"{Browsers.Name(kind)}:");
+            var table = new TextTable("  --browser-profile", "SHOWN AS", "ACCOUNT");
+            foreach (var p in profiles)
+                table.AddRow($"  {p.Directory}", p.DisplayName, p.Account ?? "-");
+            table.RenderTo(output);
+            output.WriteLine();
+        }
+        if (!any)
+            output.WriteLine("No Edge/Chrome/Brave profiles found.");
+        else
+            output.WriteLine("Pass either the left column or \"SHOWN AS\" to --browser-profile.");
+        return ExitCode.Ok;
+    }
+
     public int Run(string name, string? path, string? browser, string? browserProfile)
     {
         var profile = store.Load(name);
@@ -53,29 +91,44 @@ public sealed class PortalHandler(ProfileStore store, IUrlOpener opener, TextWri
         var url = BuildUrl(profile, path);
         var mapping = profile.Meta?.Browser;
         var kind = mapping is null ? BrowserKind.Default : Browsers.Parse(mapping.Kind);
+        var account = profile.ActiveSubscription?.User?.Name;
 
-        var launched = opener.Open(kind, mapping?.Profile, url);
+        // Resolve "g5-dev" (display name) or "Profile 3" (directory) to the directory Chromium wants.
+        string? launchDir = mapping?.Profile;
+        BrowserProfile? matched = null;
+        if (!string.IsNullOrEmpty(mapping?.Profile) && Browsers.IsChromium(kind))
+        {
+            var known = _browsers.List(kind);
+            (launchDir, matched) = Browsers.ResolveProfile(known, mapping.Profile);
+            if (matched is null && known.Count > 0)
+                error.WriteLine(
+                    $"note: no {Browsers.Name(kind)} profile called '{mapping.Profile}' — opening a fresh one. " +
+                    $"Sign in with {account ?? "your account"} when it appears (run 'azpm portal --browsers' to see existing ones).");
+        }
+
+        var launched = opener.Open(kind, launchDir, url);
         store.TouchLastUsed(name);
 
-        var account = profile.ActiveSubscription?.User?.Name;
         if (launched)
         {
-            output.WriteLine($"Opened the portal in {Browsers.Name(kind)}" +
-                (string.IsNullOrEmpty(mapping?.Profile) ? "" : $" / {mapping!.Profile}") +
-                (account is null ? "." : $" ({account})."));
-            error.WriteLine(
-                $"tip: if you still see an account picker, that browser profile has more than one " +
-                $"account — give '{name}' its own browser profile signed into just {account ?? "one account"}.");
+            var where = matched is not null
+                ? $"{Browsers.Name(kind)} / {matched.DisplayName}"
+                : string.IsNullOrEmpty(launchDir) ? Browsers.Name(kind) : $"{Browsers.Name(kind)} / {launchDir}";
+            output.WriteLine($"Opened the portal in {where}{(account is null ? "." : $" ({account}).")}");
+            if (matched?.Account is not null && account is not null &&
+                !string.Equals(matched.Account, account, StringComparison.OrdinalIgnoreCase))
+                error.WriteLine($"warning: that browser profile is signed in as {matched.Account}, not {account}.");
         }
         else if (mapping is null)
         {
             error.WriteLine(
-                $"opened in your default browser. Bind a browser profile to skip the picker:  " +
-                $"azpm portal {name} --browser edge --browser-profile \"Profile 1\"");
+                $"opened in your default browser (no isolation). Bind one to skip the account picker:\n" +
+                $"  azpm portal --browsers                      # see your options\n" +
+                $"  azpm portal {name} --browser brave --browser-profile \"<name>\"");
         }
         else
         {
-            output.WriteLine($"Opened the portal.");
+            output.WriteLine("Opened the portal.");
         }
 
         return ExitCode.Ok;

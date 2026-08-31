@@ -216,16 +216,24 @@ localCmd.SetAction(r => Guard(() =>
 root.Subcommands.Add(localCmd);
 
 // --- portal ------------------------------------------------------
-var portalName = new Argument<string>("name") { Description = "Profile name" };
+var portalName = new Argument<string?>("name") { Description = "Profile name", Arity = ArgumentArity.ZeroOrOne };
 var portalPath = new Argument<string?>("path") { Description = "Portal path / blade (optional)", Arity = ArgumentArity.ZeroOrOne };
-var portalBrowser = new Option<string?>("--browser") { Description = "edge | chrome | firefox | default (persists)" };
-var portalBrowserProfile = new Option<string?>("--browser-profile") { Description = "Browser-profile name / directory (persists)" };
+var portalBrowser = new Option<string?>("--browser") { Description = "edge | chrome | brave | firefox | default (persists)" };
+var portalBrowserProfile = new Option<string?>("--browser-profile") { Description = "Browser-profile directory or shown name (persists)" };
+var portalListBrowsers = new Option<bool>("--browsers") { Description = "List the browser profiles azpm can see, then exit" };
 var portalCmd = new Command("portal", "Open the Azure Portal in the profile's browser context")
 {
-    portalName, portalPath, portalBrowser, portalBrowserProfile,
+    portalName, portalPath, portalBrowser, portalBrowserProfile, portalListBrowsers,
 };
-portalCmd.SetAction(r => Guard(() => new PortalHandler(Store(r), new UrlOpener(), Console.Out, Console.Error).Run(
-    r.GetValue(portalName)!, r.GetValue(portalPath), r.GetValue(portalBrowser), r.GetValue(portalBrowserProfile))));
+portalCmd.SetAction(r => Guard(() =>
+{
+    var h = new PortalHandler(Store(r), new UrlOpener(), Console.Out, Console.Error);
+    if (r.GetValue(portalListBrowsers))
+        return h.ListBrowsers();
+    var pname = r.GetValue(portalName)
+        ?? throw new AzpmException(ExitCode.UsageError, "usage: azpm portal <name>  (or: azpm portal --browsers)");
+    return h.Run(pname, r.GetValue(portalPath), r.GetValue(portalBrowser), r.GetValue(portalBrowserProfile));
+}));
 root.Subcommands.Add(portalCmd);
 
 return root.Parse(args).Invoke();

@@ -142,16 +142,20 @@ the identity is nailed to the directory.
 ## `azpm portal` — the Portal in the right browser, right tenant
 
 ```console
-PS C:\> azpm portal prod --browser edge --browser-profile "Work"   # bind once (saved)
-PS C:\> azpm portal prod                                           # thereafter
-PS C:\> azpm portal prod /resource/subscriptions                   # deep-link
+PS C:\> azpm portal --browsers                                       # see your browser profiles
+PS C:\> azpm portal prod --browser brave --browser-profile g5-prod   # bind once (saved)
+PS C:\> azpm portal prod                                             # thereafter
+PS C:\> azpm portal prod /resource/subscriptions                     # deep-link
 ```
 
-Opens `portal.azure.com` pinned to the profile's tenant, in a browser profile you bind to the
-azpm profile. Browser profiles keep their own cookies, so you sign in there once.
+Opens `portal.azure.com` pinned to the profile's tenant, in a browser profile bound to the azpm
+profile. `--browser`: `edge` / `chrome` / `brave` / `firefox` / `default`. `--browser-profile`
+takes the directory (`Profile 4`) **or** the name shown in the browser (`g5-prod`) —
+`azpm portal --browsers` lists both.
 
-Still getting an account picker? That browser profile has more than one account signed in — give
-each azpm profile its **own** browser profile with a single account.
+Best results: **one browser profile per azpm profile, one account each.** Point `--browser-profile`
+at a name that doesn't exist yet and Chromium creates a fresh one — sign in once, done. A
+leftover account picker means that browser profile has more than one account in it.
 
 ---
 

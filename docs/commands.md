@@ -99,25 +99,33 @@ profile with no re-auth. `--from` defaults to the active `AZURE_CONFIG_DIR` if s
 Renames a profile directory and updates its `meta.json`. If the current shell points at `<old>`,
 run `azpm use <new>` afterwards.
 
-## `azpm portal <name> [path] [--browser <b>] [--browser-profile <p>]`
+## `azpm portal <name> [path] [--browser <b>] [--browser-profile <p>]`  ·  `azpm portal --browsers`
 
-Opens `https://portal.azure.com/#@<tenant>` (the profile's active-subscription tenant) — plus an
-optional blade `path` — in a browser profile bound to this azpm profile. Browser profiles keep
-their own cookies, so once you've signed in there it stays signed in.
+Opens `https://portal.azure.com/#@<tenant>` (the profile's active-subscription tenant, plus an
+optional blade `path`) in a **browser profile** bound to this azpm profile. Browser profiles
+keep their own cookies, so you sign in there once.
 
 ```
-azpm portal prod --browser edge --browser-profile "Profile 2"   # bind (persists to meta.json) + open
-azpm portal prod                                                # reuse the binding
-azpm portal prod /resource/subscriptions                        # deep-link
+azpm portal --browsers                                       # list the browser profiles azpm can see
+azpm portal prod --browser brave --browser-profile g5-prod   # bind (persists) + open
+azpm portal prod                                             # reuse the binding
+azpm portal prod /resource/subscriptions                     # deep-link
 ```
 
-`--browser`: `edge` | `chrome` | `firefox` | `default`. With no binding it uses the OS default
-browser and prints a hint. Firefox uses separate profiles (`-P`), not containers.
+- `--browser`: `edge` | `chrome` | `brave` | `firefox` | `default`.
+- `--browser-profile`: for Chromium browsers, either the profile **directory** (`Profile 4`) or
+  the **name you see in the browser** (`g5-prod`) — `azpm portal --browsers` shows both.
+  Firefox takes the profile name from `about:profiles`.
+- **A name that doesn't exist yet:** Chromium **creates a fresh blank profile** with that
+  directory name (Firefox opens its profile manager). azpm tells you when this happens — sign in
+  once and you're set. This is the recommended pattern: one browser profile per azpm profile,
+  one account each.
+- With no binding, `azpm portal` uses your OS default browser (no isolation) and prints how to
+  bind one.
 
-**Still seeing an account picker?** The URL pins the *tenant* and passes a `login_hint` for the
-profile's account, but if the bound browser profile has **more than one account signed in**, the
-picker still appears. Give each azpm profile its own browser profile with a single account —
-that's what removes it.
+**Still seeing an account picker?** The URL pins the tenant and passes a `login_hint`, but a
+browser profile with **more than one account signed in** still shows it. One account per browser
+profile is what removes it.
 
 ## `azpm use <name> [--shell <s>]`  +  `azpm init <shell>`
 
