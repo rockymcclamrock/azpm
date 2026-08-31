@@ -29,6 +29,7 @@ public sealed class UseHandler(ProfileStore store, TextWriter output, TextWriter
                 error.WriteLine($"  To make 'azpm use' work in your normal shell: add this line to");
                 error.WriteLine($"  {ShellIntegration.ProfileFile(kind)}, then open a new shell —");
                 error.WriteLine($"      {ShellIntegration.SetupLine(kind)}");
+                error.WriteLine($"  (assumed {ShellIntegration.ShellName(kind)}; if that's wrong: azpm use {name} --shell <bash|zsh|fish|powershell>)");
             }
             else
             {
@@ -69,9 +70,10 @@ public sealed class InitHandler(TextWriter output, TextWriter error)
         if (!Console.IsOutputRedirected)
         {
             error.WriteLine();
-            error.WriteLine("The text above is a shell snippet — it does nothing on its own.");
+            error.WriteLine($"The text above is a {ShellIntegration.ShellName(kind)} snippet — it does nothing on its own.");
             error.WriteLine($"Add this one line to {ShellIntegration.ProfileFile(kind)} and open a new shell:");
             error.WriteLine($"    {ShellIntegration.SetupLine(kind, auto)}");
+            error.WriteLine($"(wrong shell? run:  azpm init <bash|zsh|fish|powershell>{(auto ? " --auto" : "")})");
         }
         return ExitCode.Ok;
     }
