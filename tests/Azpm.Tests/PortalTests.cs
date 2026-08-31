@@ -61,6 +61,26 @@ public sealed class PortalTests
     }
 
     [Fact]
+    public void BuildUrl_adds_a_login_hint_for_the_known_account()
+    {
+        var p = new Profile
+        {
+            Name = "prod",
+            ConfigDir = "x",
+            AzureProfile = new AzureProfileFile
+            {
+                Subscriptions = [new AzureSubscription
+                {
+                    IsDefault = true, TenantId = "t",
+                    User = new AzureUser { Name = "me@contoso.com" },
+                }],
+            },
+        };
+        Assert.Equal("https://portal.azure.com/?login_hint=me%40contoso.com#@t",
+            PortalHandler.BuildUrl(p, null));
+    }
+
+    [Fact]
     public void Portal_persists_the_browser_mapping()
     {
         using var t = new TempHome();

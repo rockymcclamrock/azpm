@@ -53,6 +53,35 @@ public static class ShellIntegration
         _ => $"unset {name}",
     };
 
+    /// <summary>The rc/profile file the user should add the setup line to.</summary>
+    public static string ProfileFile(ShellKind kind) => kind switch
+    {
+        ShellKind.Pwsh or ShellKind.PowerShell => "$PROFILE",
+        ShellKind.Bash => "~/.bashrc",
+        ShellKind.Zsh => "~/.zshrc",
+        ShellKind.Fish => "~/.config/fish/config.fish",
+        _ => "your shell profile",
+    };
+
+    /// <summary>The one line that wires up <c>azpm use</c> / <c>deactivate</c> for a shell.</summary>
+    public static string SetupLine(ShellKind kind, bool auto = false)
+    {
+        var name = ShellName(kind);
+        var flag = auto ? " --auto" : "";
+        return kind is ShellKind.Pwsh or ShellKind.PowerShell
+            ? $"azpm init {name}{flag} | Out-String | Invoke-Expression"
+            : kind is ShellKind.Fish
+                ? $"azpm init {name}{flag} | source"
+                : $"eval \"$(azpm init {name}{flag})\"";
+    }
+
+    public static string InitHeader(ShellKind kind, bool auto) => $"""
+        # azpm shell integration. Add this line to {ProfileFile(kind)} and restart your shell:
+        #     {SetupLine(kind, auto)}
+        # (running that line now works too, for this session.)
+
+        """;
+
     public static string InitScript(ShellKind kind, string exePath)
     {
         switch (kind)

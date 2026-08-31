@@ -104,13 +104,30 @@ public sealed class ShellIntegrationTests
         {
             var errw = new StringWriter();
             new UseHandler(t.Store, new StringWriter(), errw).Run("dev", "bash", emit: false);
-            Assert.Contains("azpm init bash", errw.ToString());
+            var err = errw.ToString();
+            Assert.Contains("eval \"$(azpm init bash)\"", err);   // the exact setup line
+            Assert.Contains("~/.bashrc", err);
+            Assert.Contains("azpm shell dev", err);               // the no-setup alternative
         }
         finally
         {
             Environment.SetEnvironmentVariable(ShellIntegration.Marker, prev);
         }
     }
+
+    [Theory]
+    [InlineData(ShellKind.PowerShell, "azpm init powershell | Out-String | Invoke-Expression", "$PROFILE")]
+    [InlineData(ShellKind.Bash, "eval \"$(azpm init bash)\"", "~/.bashrc")]
+    [InlineData(ShellKind.Fish, "azpm init fish | source", "~/.config/fish/config.fish")]
+    public void SetupLine_and_ProfileFile_match_the_shell(ShellKind kind, string line, string file)
+    {
+        Assert.Equal(line, ShellIntegration.SetupLine(kind));
+        Assert.Equal(file, ShellIntegration.ProfileFile(kind));
+    }
+
+    [Fact]
+    public void InitHeader_shows_the_setup_line() =>
+        Assert.Contains("eval \"$(azpm init zsh --auto)\"", ShellIntegration.InitHeader(ShellKind.Zsh, auto: true));
 
     [Fact]
     public void Deactivate_emits_an_unset_for_the_shell()

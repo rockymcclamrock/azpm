@@ -114,10 +114,18 @@ azpm portal prod /resource/subscriptions                        # deep-link
 `--browser`: `edge` | `chrome` | `firefox` | `default`. With no binding it uses the OS default
 browser and prints a hint. Firefox uses separate profiles (`-P`), not containers.
 
+**Still seeing an account picker?** The URL pins the *tenant* and passes a `login_hint` for the
+profile's account, but if the bound browser profile has **more than one account signed in**, the
+picker still appears. Give each azpm profile its own browser profile with a single account —
+that's what removes it.
+
 ## `azpm use <name> [--shell <s>]`  +  `azpm init <shell>`
 
-In-place switching for the *current* shell (no subshell). One-time setup — add to your shell
-profile:
+In-place switching for the *current* shell. `azpm use` on its own only **prints** the env
+assignments — a program can't change its parent shell — so it needs a one-time hook, exactly
+like `nvm` / `direnv` / `starship init`. (No setup? Use `azpm shell <name>` instead.)
+
+One-time setup — add to your shell profile:
 
 ```powershell
 # PowerShell  ($PROFILE)

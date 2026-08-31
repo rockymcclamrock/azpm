@@ -194,7 +194,7 @@ root.Subcommands.Add(deactCmd);
 var initShell = new Argument<string>("shell") { Description = "pwsh | powershell | bash | zsh | fish" };
 var initAuto = new Option<bool>("--auto") { Description = "Also add a hook that follows .azpm files on cd" };
 var initCmd = new Command("init", "Print a shell wrapper enabling 'azpm use' / 'azpm deactivate'") { initShell, initAuto };
-initCmd.SetAction(r => Guard(() => new InitHandler(Console.Out).Run(r.GetValue(initShell)!, r.GetValue(initAuto))));
+initCmd.SetAction(r => Guard(() => new InitHandler(Console.Out, Console.Error).Run(r.GetValue(initShell)!, r.GetValue(initAuto))));
 root.Subcommands.Add(initCmd);
 
 // --- local -------------------------------------------------------

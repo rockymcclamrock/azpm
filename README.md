@@ -1,6 +1,6 @@
 # azpm — Azure Profile Manager
 
-> **Status: early development** (`v0.2.0-pre`) — see [SPEC.md](SPEC.md), [PLAN.md](PLAN.md),
+> **Status: early development** (`v0.2.2-pre`) — see [SPEC.md](SPEC.md), [PLAN.md](PLAN.md),
 > [docs/commands.md](docs/commands.md).
 
 `aws-vault` / `granted`, but for Azure. Named, isolated Azure CLI login profiles you switch
@@ -9,25 +9,38 @@ between instantly — no re-login, no clobbering your other tenant.
 ```
 azpm add dev                     # az login into an isolated profile
 azpm add prod
-azpm shell prod                  # subshell with the prod profile active + prompt marker
+azpm shell prod                  # <- works right now, no setup: a subshell with prod active
 azpm exec dev -- az group list   # run one command in a profile
 azpm ls                          # every profile: account, tenant, subscription
 azpm portal prod                 # open the Portal in prod's browser profile, right tenant
 ```
 
-## In-place switching
+## Two ways to switch
 
-```powershell
-azpm init powershell | Out-String | Invoke-Expression   # add to $PROFILE
-azpm use prod            # sets AZURE_CONFIG_DIR / AZPM_PROFILE / ARM_* in this shell
-azpm deactivate
+**`azpm shell <name>`** opens a subshell with the profile active. Nothing to set up — use this
+first.
+
+**`azpm use <name>`** switches the *current* shell in place — but no program can change its
+parent shell's environment, so it needs a one-time hook in your shell profile (exactly like
+`nvm`, `direnv`, `starship init`). `azpm init` prints that hook; you add it once:
+
+| shell | add to | line |
+|---|---|---|
+| PowerShell | `$PROFILE` | `azpm init powershell \| Out-String \| Invoke-Expression` |
+| bash | `~/.bashrc` | `eval "$(azpm init bash)"` |
+| zsh | `~/.zshrc` | `eval "$(azpm init zsh)"` |
+| fish | `~/.config/fish/config.fish` | `azpm init fish \| source` |
+
+Restart the shell, then:
+
+```
+azpm use prod         # sets AZURE_CONFIG_DIR / AZPM_PROFILE / ARM_* here
+azpm current          # -> prod
+azpm deactivate       # back to your default login
 ```
 
-bash/zsh: `eval "$(azpm init bash)"` · fish: `azpm init fish | source`
-
-Add `--auto` to `init` and the shell follows `.azpm` files as you `cd`
-(`azpm local prod` writes one). `azpm prompt` feeds your prompt — see
-[docs/prompt.md](docs/prompt.md).
+`azpm init <shell> --auto` additionally follows `.azpm` files as you `cd` (`azpm local prod`
+writes one). `azpm prompt` feeds the active profile into your prompt — [docs/prompt.md](docs/prompt.md).
 
 ## Install
 

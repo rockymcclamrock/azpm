@@ -57,15 +57,26 @@ public sealed class PortalHandler(ProfileStore store, IUrlOpener opener, TextWri
         var launched = opener.Open(kind, mapping?.Profile, url);
         store.TouchLastUsed(name);
 
+        var account = profile.ActiveSubscription?.User?.Name;
         if (launched)
-            output.WriteLine($"Opened {url} in {Browsers.Name(kind)}" +
-                (string.IsNullOrEmpty(mapping?.Profile) ? "." : $" / {mapping!.Profile}."));
-        else if (mapping is null)
+        {
+            output.WriteLine($"Opened the portal in {Browsers.Name(kind)}" +
+                (string.IsNullOrEmpty(mapping?.Profile) ? "" : $" / {mapping!.Profile}") +
+                (account is null ? "." : $" ({account})."));
             error.WriteLine(
-                $"# opened in your default browser. To bind '{name}' to a browser profile:  " +
+                $"tip: if you still see an account picker, that browser profile has more than one " +
+                $"account — give '{name}' its own browser profile signed into just {account ?? "one account"}.");
+        }
+        else if (mapping is null)
+        {
+            error.WriteLine(
+                $"opened in your default browser. Bind a browser profile to skip the picker:  " +
                 $"azpm portal {name} --browser edge --browser-profile \"Profile 1\"");
+        }
         else
-            output.WriteLine($"Opened {url}.");
+        {
+            output.WriteLine($"Opened the portal.");
+        }
 
         return ExitCode.Ok;
     }
@@ -75,8 +86,15 @@ public sealed class PortalHandler(ProfileStore store, IUrlOpener opener, TextWri
         var tenant = profile.ActiveSubscription?.TenantId
             ?? profile.ActiveSubscription?.TenantDefaultDomain
             ?? profile.Meta?.TenantHint;
+        var account = profile.ActiveSubscription?.User?.Name;
 
         var url = "https://portal.azure.com/";
+
+        // login_hint nudges the sign-in page toward the right account when the browser profile
+        // has several signed in. Best-effort — the surest fix is one account per browser profile.
+        if (!string.IsNullOrEmpty(account))
+            url += $"?login_hint={Uri.EscapeDataString(account)}";
+
         if (!string.IsNullOrEmpty(tenant))
             url += $"#@{tenant}";
 
