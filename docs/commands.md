@@ -146,17 +146,36 @@ azpm portal prod /resource/subscriptions                     # deep-link
   asks the browser to open it. **Sign that profile into the right account once** — a brand-new
   profile has no session, so the first visit goes through a full login. One browser profile per
   azpm profile, one account each. (Firefox: opens its profile manager instead.)
-- **Managed / corporate browser:** if the browser is locked down by group policy it may refuse
-  the new profile (or fight it with device SSO), and the portal opens in your current profile
-  instead. `azpm portal` warns when it can detect this. Workarounds: create the profile in the
-  browser UI yourself and sign it in, then `azpm portal <name> --browser-profile "<its name>"`;
-  or point `--browser` at a browser that *isn't* managed (often Brave); or `--browser default`.
 - With no binding, `azpm portal` uses your OS default browser (no isolation) and prints how to
   bind one.
 
 The portal URL is just `https://portal.azure.com/#@<tenant>` — the tenant is pinned in the URL,
 the **account comes from whichever browser profile you're in**. A profile with more than one
 account signed in will still show a picker; one account per profile removes it.
+
+### Corporate / managed browsers
+
+On a work device, Edge (and often Chrome) is managed by group policy, and that breaks the
+new-profile flow in ways azpm can't override:
+
+- Profile creation may be disabled outright (`azpm portal` detects the policy key and warns).
+- Or the profile is created, but **device SSO** signs it into your *primary* work account, not
+  the tenant you asked for.
+- Or Edge's **account-based profile routing** sees the tenant belongs to another profile and
+  reopens the portal there — symptom: the new window loads, times out, then the portal appears
+  in your regular profile.
+
+**Recommended fix: use Brave for `azpm portal`.** Brave is Chromium (so `--browser-profile`,
+auto-create, and the profile menu all work the same) but is almost never corporate-managed, so
+none of the above applies:
+
+```
+azpm portal <name> --browser brave --browser-profile <name>
+```
+
+Other options: create the profile in the managed browser's UI yourself and sign it in once, then
+bind to it by name; bind to an existing profile that already has the account and let `#@<tenant>`
+switch the directory within it (no isolation); or `--browser default`.
 
 ## `azpm use <name> [--shell <s>]`  +  `azpm init <shell>`
 

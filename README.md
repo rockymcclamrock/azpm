@@ -164,9 +164,17 @@ at a name that doesn't exist yet and Chromium creates a fresh one — **sign it 
 account once** (a new profile has no session). A leftover account picker means that browser
 profile has more than one account in it.
 
-On a **corporate / group-policy-managed browser**, new profiles may be blocked or fight device
-SSO — `azpm portal` warns when it can detect this. Then: make the profile in the browser UI
-yourself, or use a non-managed browser (often Brave), or `--browser default`.
+**On a work device, use Brave for `azpm portal`.** Corporate-managed Edge/Chrome fight the
+new-profile flow with device SSO and account-based profile routing (the new window opens, times
+out, then the portal lands in your regular profile). Brave is Chromium — everything works the
+same — but isn't managed:
+
+```console
+PS C:\> azpm portal prod --browser brave --browser-profile prod
+```
+
+See [docs/commands.md](docs/commands.md#corporate--managed-browsers) for the details and other
+workarounds.
 
 ---
 

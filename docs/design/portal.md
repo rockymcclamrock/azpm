@@ -50,12 +50,19 @@ directory (with a `Preferences` file carrying the display name) and launches Chr
 `--profile-directory=<name>`; Chromium then registers it and opens a window there. Verified
 against Edge + Chrome with the browser already running.
 
-**Managed browsers.** On a device where the browser is managed by group policy
-(`BrowserAddProfileEnabled=0` for Edge, `BrowserAddPersonEnabled=0` for Chrome, or other MDM
-restrictions), Chromium silently refuses the new profile and the URL opens in the currently
-active profile instead. `azpm portal` checks the known policy keys and warns up front when it
-can; if it can't tell, the fix is to create the profile through the browser UI first, then
-`azpm portal <name> --browser-profile "<its name>"`, or fall back to `--browser default`.
+**Managed browsers.** On a work device the browser is managed by group policy and the
+new-profile flow breaks in several ways: profile creation may be disabled
+(`BrowserAddProfileEnabled=0` Edge / `BrowserAddPersonEnabled=0` Chrome — `azpm portal` checks
+these and warns); or the profile is created but device SSO signs it into the primary work
+account; or Edge's account-based profile routing reopens the URL in whichever profile already
+owns that tenant (symptom: new window loads, times out, portal appears in the regular profile).
+None of this is overridable from a launcher.
+
+**Recommendation: use Brave.** It's Chromium (same `--profile-directory`, same auto-create, same
+`Local State` format) but is essentially never corporate-managed. `azpm portal <name> --browser
+brave --browser-profile <name>` sidesteps all of it. Fallbacks: create the profile in the
+managed browser's UI and sign in once; bind to an existing profile and rely on `#@<tenant>` for
+the directory switch; `--browser default`.
 
 ## Not doing yet
 
