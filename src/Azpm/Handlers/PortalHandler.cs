@@ -10,15 +10,18 @@ public interface IUrlOpener
     bool Open(BrowserKind kind, string? browserProfileDir, string url);
 }
 
-/// <summary>Enumerates a Chromium browser's profiles (from its <c>Local State</c>).</summary>
+/// <summary>Reads / seeds a Chromium browser's profiles.</summary>
 public interface IBrowserProfiles
 {
     IReadOnlyList<BrowserProfile> List(BrowserKind kind);
+    void Seed(BrowserKind kind, string dir, string displayName);
 }
 
 public sealed class SystemBrowserProfiles : IBrowserProfiles
 {
     public IReadOnlyList<BrowserProfile> List(BrowserKind kind) => Browsers.ListProfiles(kind);
+    public void Seed(BrowserKind kind, string dir, string displayName) =>
+        Browsers.SeedChromiumProfile(kind, dir, displayName);
 }
 
 public sealed class UrlOpener : IUrlOpener
@@ -100,10 +103,14 @@ public sealed class PortalHandler(
         {
             var known = _browsers.List(kind);
             (launchDir, matched) = Browsers.ResolveProfile(known, mapping.Profile);
-            if (matched is null && known.Count > 0)
+            if (matched is null)
+            {
+                // New profile — name it after the binding so it reads as "g5-prod" in the browser.
+                _browsers.Seed(kind, launchDir, mapping.Profile);
                 error.WriteLine(
-                    $"note: no {Browsers.Name(kind)} profile called '{mapping.Profile}' — opening a fresh one. " +
-                    $"Sign in with {account ?? "your account"} when it appears (run 'azpm portal --browsers' to see existing ones).");
+                    $"note: creating a new {Browsers.Name(kind)} profile '{mapping.Profile}' — " +
+                    $"sign in with {account ?? "your account"} when its window opens.");
+            }
         }
 
         var launched = opener.Open(kind, launchDir, url);

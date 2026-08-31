@@ -116,10 +116,11 @@ azpm portal prod /resource/subscriptions                     # deep-link
 - `--browser-profile`: for Chromium browsers, either the profile **directory** (`Profile 4`) or
   the **name you see in the browser** (`g5-prod`) — `azpm portal --browsers` shows both.
   Firefox takes the profile name from `about:profiles`.
-- **A name that doesn't exist yet:** Chromium **creates a fresh blank profile** with that
-  directory name (Firefox opens its profile manager). azpm tells you when this happens — sign in
-  once and you're set. This is the recommended pattern: one browser profile per azpm profile,
-  one account each.
+- **A name that doesn't exist yet:** azpm creates the Chromium profile directory and pre-names
+  it (via a `Preferences` file) so it shows up as e.g. `g5-prod` in the browser's profile menu,
+  not "Person 3". The browser opens it; sign in once and you're set. This is the recommended
+  pattern: one browser profile per azpm profile, one account each. (Firefox: opens its profile
+  manager instead — create the profile there.)
 - With no binding, `azpm portal` uses your OS default browser (no isolation) and prints how to
   bind one.
 

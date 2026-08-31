@@ -24,8 +24,13 @@ public sealed class FakeUrlOpener : IUrlOpener
 public sealed class FakeBrowserProfiles : IBrowserProfiles
 {
     public Dictionary<BrowserKind, IReadOnlyList<BrowserProfile>> ByKind { get; } = [];
+    public List<(BrowserKind Kind, string Dir, string Name)> Seeded { get; } = [];
+
     public IReadOnlyList<BrowserProfile> List(BrowserKind kind) =>
         ByKind.TryGetValue(kind, out var v) ? v : [];
+
+    public void Seed(BrowserKind kind, string dir, string displayName) =>
+        Seeded.Add((kind, dir, displayName));
 }
 
 public sealed class PortalTests
@@ -132,6 +137,39 @@ public sealed class PortalTests
         var text = err.ToString();
         Assert.Contains("--browser", text);
         Assert.Contains("--browsers", text);
+    }
+
+    [Fact]
+    public void Portal_seeds_a_named_profile_when_the_binding_is_new()
+    {
+        using var t = new TempHome();
+        t.Store.Create("prod", null, null);
+        t.Store.UpdateMeta("prod", m => m.Browser = new BrowserMapping { Kind = "brave", Profile = "acme-prod" });
+        var opener = new FakeUrlOpener();
+        var browsers = new FakeBrowserProfiles();   // nothing installed → it's a new profile
+
+        new PortalHandler(t.Store, opener, TextWriter.Null, TextWriter.Null, browsers)
+            .Run("prod", null, null, null);
+
+        Assert.Contains((BrowserKind.Brave, "acme-prod", "acme-prod"), browsers.Seeded);
+        Assert.Equal("acme-prod", opener.Profile);
+    }
+
+    [Fact]
+    public void Portal_does_not_seed_an_existing_profile()
+    {
+        using var t = new TempHome();
+        t.Store.Create("prod", null, null);
+        t.Store.UpdateMeta("prod", m => m.Browser = new BrowserMapping { Kind = "brave", Profile = "g5-prod" });
+        var browsers = new FakeBrowserProfiles
+        {
+            ByKind = { [BrowserKind.Brave] = [new BrowserProfile("Profile 4", "g5-prod", null)] },
+        };
+
+        new PortalHandler(t.Store, new FakeUrlOpener(), TextWriter.Null, TextWriter.Null, browsers)
+            .Run("prod", null, null, null);
+
+        Assert.Empty(browsers.Seeded);
     }
 
     [Fact]

@@ -123,6 +123,34 @@ public static class Browsers
         return (wanted, null); // unknown — Chromium will create a fresh profile with this dir name
     }
 
+    /// <summary>
+    /// Pre-seeds a not-yet-existing Chromium profile directory with a <c>Preferences</c> file that
+    /// sets its display name, so it shows up in the browser as e.g. "g5-prod" rather than
+    /// "Person 3". No-op if the directory already exists or the browser is unknown.
+    /// </summary>
+    public static void SeedChromiumProfile(BrowserKind kind, string dir, string displayName)
+    {
+        if (!IsChromium(kind) || ChromiumUserDataDir(kind) is not { } userData)
+            return;
+
+        var profileDir = Path.Combine(userData, dir);
+        if (Directory.Exists(profileDir))
+            return;
+
+        try
+        {
+            Directory.CreateDirectory(profileDir);
+            var prefs = Path.Combine(profileDir, "Preferences");
+            if (!File.Exists(prefs))
+                File.WriteAllText(prefs,
+                    "{\"profile\":{\"name\":\"" + JsonEncodedText.Encode(displayName) + "\"}}");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // best effort — the browser will still make the profile, just unnamed
+        }
+    }
+
     private static string? ChromiumUserDataDir(BrowserKind kind)
     {
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
