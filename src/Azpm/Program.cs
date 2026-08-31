@@ -8,7 +8,26 @@ var homeOption = new Option<string?>("--home")
     Recursive = true,
 };
 
-var root = new RootCommand("azpm - Azure Profile Manager: isolated Azure CLI login profiles");
+var root = new RootCommand("""
+    azpm - Azure Profile Manager: isolated Azure CLI login profiles.
+
+    Each profile is its own AZURE_CONFIG_DIR, so 'az' logins for different tenants or
+    accounts sit side by side instead of overwriting each other.
+
+    Everyday use:
+      azpm add work                    create a profile and sign in
+      azpm shell work                  subshell that IS 'work'  (type 'exit' to leave)
+      azpm exec work -- az group list  run one command as 'work'
+      azpm ls                          list profiles: account, tenant, sub, status, login age
+      azpm portal work                 open the Portal as 'work' (after a one-time --browser bind)
+
+    Switch this shell in place (no subshell), like nvm/direnv - needs a one-time setup line
+    from 'azpm init' in your shell profile:
+      azpm use work  /  azpm use dev  /  azpm deactivate
+
+    'azpm' with no arguments picks a profile and drops you into its shell.
+    Full guide: https://github.com/rockymcclamrock/azpm
+    """);
 root.Options.Add(homeOption);
 
 ProfileStore Store(ParseResult r) => new(AzpmHome.Resolve(r.GetValue(homeOption)));
@@ -77,8 +96,10 @@ root.Subcommands.Add(renameCmd);
 
 // --- ls --------------------------------------------------------------------
 var lsJson = new Option<bool>("--json") { Description = "Emit JSON instead of a table" };
-var lsCheck = new Option<bool>("--check") { Description = "Actually probe each profile's token (slower; needs 'az')" };
-var lsCmd = new Command("ls", "List profiles") { lsJson, lsCheck };
+var lsCheck = new Option<bool>("--check") { Description = "Probe each profile's token with 'az' (valid / needs login / timed out); slower" };
+var lsCmd = new Command("ls",
+    "List profiles: account, tenant, subscription, STATUS (ready/logged out), LOGIN (age of last sign-in)")
+    { lsJson, lsCheck };
 lsCmd.Aliases.Add("list");
 lsCmd.SetAction(r => Guard(() => new LsHandler(Store(r), Console.Out, AzCli.Locate).Run(
     r.GetValue(lsJson), r.GetValue(lsCheck))));
@@ -91,13 +112,16 @@ pathCmd.SetAction(r => Guard(() => new PathHandler(Store(r), Console.Out).Run(r.
 root.Subcommands.Add(pathCmd);
 
 // --- current ------------------------------------------------------------
-var currentCmd = new Command("current", "Print the active profile (from AZPM_PROFILE)");
+var currentCmd = new Command("current",
+    "Print the active profile (AZPM_PROFILE); exits non-zero if none (use 'azpm prompt' in prompts)");
 currentCmd.SetAction(_ => Guard(() => new CurrentHandler(Console.Out, Console.Error).Run()));
 root.Subcommands.Add(currentCmd);
 
 // --- prompt ------------------------------------------------------------
-var promptFormat = new Option<string?>("--format") { Description = "Template with {} for the profile name (default: just the name)" };
-var promptCmd = new Command("prompt", "Prompt-friendly active-profile string (empty + exit 0 when none)") { promptFormat };
+var promptFormat = new Option<string?>("--format") { Description = "Template; {} is replaced by the profile name, e.g. \" [az:{}]\" (default: the bare name)" };
+var promptCmd = new Command("prompt",
+    "Active profile for a shell prompt: silent when none, always exits 0 (vs 'current', which errors)")
+    { promptFormat };
 promptCmd.SetAction(r => Guard(() => new PromptHandler(Console.Out).Run(r.GetValue(promptFormat))));
 root.Subcommands.Add(promptCmd);
 
@@ -108,7 +132,8 @@ var execCommand = new Argument<string[]>("command")
     Description = "Command and arguments to run (put after --)",
     Arity = ArgumentArity.ZeroOrMore,
 };
-var execCmd = new Command("exec", "Run a command in a profile: azpm exec <name> -- <cmd> [args...]")
+var execCmd = new Command("exec",
+    "Run one command in a profile, then return - everything after '--' runs verbatim: azpm exec prod -- az group list")
 {
     execName, execCommand,
 };
@@ -125,7 +150,8 @@ root.Subcommands.Add(execCmd);
 // --- shell ------------------------------------------------------------
 var shellName = new Argument<string>("name") { Description = "Profile name" };
 var shellOpt = new Option<string?>("--shell") { Description = "pwsh | powershell | cmd | bash | zsh | fish" };
-var shellCmd = new Command("shell", "Open an interactive subshell with the profile active")
+var shellCmd = new Command("shell",
+    "Open an interactive subshell with the profile active ('exit' to leave). Zero setup - the safe default")
 {
     shellName, shellOpt,
 };
@@ -175,7 +201,8 @@ root.Subcommands.Add(rmCmd);
 var useName = new Argument<string>("name") { Description = "Profile name" };
 var useShell = new Option<string?>("--shell") { Description = "pwsh | powershell | cmd | bash | zsh | fish" };
 var useEmit = new Option<bool>("--emit") { Description = "Print only the eval-able script (used by 'azpm init')" };
-var useCmd = new Command("use", "Point the current shell at a profile (eval its output, or use 'azpm init')")
+var useCmd = new Command("use",
+    "Switch THIS shell to a profile, no subshell (needs the one-time 'azpm init' setup line loaded)")
 {
     useName, useShell, useEmit,
 };
@@ -186,14 +213,18 @@ root.Subcommands.Add(useCmd);
 // --- deactivate --------------------------------------------------
 var deactShell = new Option<string?>("--shell") { Description = "pwsh | powershell | cmd | bash | zsh | fish" };
 var deactEmit = new Option<bool>("--emit") { Description = "Print only the eval-able script (used by 'azpm init')" };
-var deactCmd = new Command("deactivate", "Clear the profile env from the current shell") { deactShell, deactEmit };
+var deactCmd = new Command("deactivate",
+    "Clear the profile from THIS shell (needs the 'azpm init' setup line, same as 'azpm use')")
+    { deactShell, deactEmit };
 deactCmd.SetAction(r => Guard(() => new DeactivateHandler(Console.Out).Run(r.GetValue(deactShell))));
 root.Subcommands.Add(deactCmd);
 
 // --- init ---------------------------------------------------------
 var initShell = new Argument<string>("shell") { Description = "pwsh | powershell | bash | zsh | fish" };
 var initAuto = new Option<bool>("--auto") { Description = "Also add a hook that follows .azpm files on cd" };
-var initCmd = new Command("init", "Print a shell wrapper enabling 'azpm use' / 'azpm deactivate'") { initShell, initAuto };
+var initCmd = new Command("init",
+    "Print the shell setup line for 'azpm use' / 'deactivate' - add it to your shell profile once")
+    { initShell, initAuto };
 initCmd.SetAction(r => Guard(() => new InitHandler(Console.Out, Console.Error).Run(r.GetValue(initShell)!, r.GetValue(initAuto))));
 root.Subcommands.Add(initCmd);
 
@@ -201,7 +232,8 @@ root.Subcommands.Add(initCmd);
 var localName = new Argument<string?>("name") { Description = "Profile to pin to this directory", Arity = ArgumentArity.ZeroOrOne };
 var localResolve = new Option<bool>("--resolve") { Description = "Print the resolved profile for the cwd (used by 'azpm init --auto')" };
 var localUnset = new Option<bool>("--unset") { Description = "Remove this directory's .azpm file" };
-var localCmd = new Command("local", "Pin a profile to the current directory tree via a .azpm file")
+var localCmd = new Command("local",
+    "Pin a profile to this directory tree via a .azpm file (bare: show; --unset: remove)")
 {
     localName, localResolve, localUnset,
 };
@@ -218,10 +250,11 @@ root.Subcommands.Add(localCmd);
 // --- portal ------------------------------------------------------
 var portalName = new Argument<string?>("name") { Description = "Profile name", Arity = ArgumentArity.ZeroOrOne };
 var portalPath = new Argument<string?>("path") { Description = "Portal path / blade (optional)", Arity = ArgumentArity.ZeroOrOne };
-var portalBrowser = new Option<string?>("--browser") { Description = "edge | chrome | brave | firefox | default (persists)" };
-var portalBrowserProfile = new Option<string?>("--browser-profile") { Description = "Browser-profile directory or shown name (persists)" };
+var portalBrowser = new Option<string?>("--browser") { Description = "Browser to launch: edge | chrome | brave | firefox | default (saved per profile)" };
+var portalBrowserProfile = new Option<string?>("--browser-profile") { Description = "Browser-profile directory or shown name (saved per profile)" };
 var portalListBrowsers = new Option<bool>("--browsers") { Description = "List the browser profiles azpm can see, then exit" };
-var portalCmd = new Command("portal", "Open the Azure Portal in the profile's browser context")
+var portalCmd = new Command("portal",
+    "Open the Azure Portal as the profile's tenant, in a bound browser profile (--browsers to list; bind with --browser)")
 {
     portalName, portalPath, portalBrowser, portalBrowserProfile, portalListBrowsers,
 };
