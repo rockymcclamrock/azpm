@@ -31,7 +31,11 @@ jobs:
       - name: Install AOT prerequisites (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
-      - run: dotnet publish src/Azpm -c Release -r ${{ matrix.rid }} -o out
+      - name: Publish
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          dotnet publish src/Azpm -c Release -r ${{ matrix.rid }} -o out -p:Version="$version"
       - name: Package
         shell: bash
         run: |
@@ -60,11 +64,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          notes="Automated build for \`${{ github.ref_name }}\`. Early development — see PLAN.md."
+          tag="${{ github.ref_name }}"
           prerelease=""
-          case "${{ github.ref_name }}" in *-*) prerelease="--prerelease";; esac
-          gh release create "${{ github.ref_name }}" dist/* \
+          case "$tag" in *-*) prerelease="--prerelease";; esac
+          gh release create "$tag" dist/* \
             --repo "${{ github.repository }}" \
-            --title "${{ github.ref_name }}" \
-            --notes "$notes" \
+            --title "$tag" \
+            --notes "Prebuilt Native AOT binaries — \`win-x64\`, \`linux-x64\`, \`osx-arm64\`. Extract the tarball, verify against the \`.sha256\`, put \`azpm\` on your \`PATH\`. Pre-1.0: the CLI and on-disk formats may still change." \
             $prerelease

@@ -30,8 +30,8 @@ Running notes from using `azpm` on real dev/prod tenants. Raw — triage into is
   the `#` fragment) is non-standard for the portal SPA and a likely cause of the timeout.
   Fixed: **dropped `login_hint`** (URL is now just `https://portal.azure.com/#@<tenant>`, tenant
   by domain not GUID); added `Browsers.ProfileCreationBlocked` policy check + upfront warning;
-  documented **"use Brave for `azpm portal` on work devices"** as the recommendation (Brave is
-  Chromium but not managed). User adopted Brave.
+  documented the managed-vs-unmanaged distinction — use any Chromium browser your org isn't
+  deploying (personal Chrome / Brave / Vivaldi). User switched to Brave.
 
 - **`azpm use` / `azpm init` are genuinely confusing to a first-time user** — took several
   rounds to explain the "a program can't change its parent shell" idea. v0.2.4: hints reworded

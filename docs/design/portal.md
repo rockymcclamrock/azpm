@@ -58,11 +58,12 @@ account; or Edge's account-based profile routing reopens the URL in whichever pr
 owns that tenant (symptom: new window loads, times out, portal appears in the regular profile).
 None of this is overridable from a launcher.
 
-**Recommendation: use Brave.** It's Chromium (same `--profile-directory`, same auto-create, same
-`Local State` format) but is essentially never corporate-managed. `azpm portal <name> --browser
-brave --browser-profile <name>` sidesteps all of it. Fallbacks: create the profile in the
-managed browser's UI and sign in once; bind to an existing profile and rely on `#@<tenant>` for
-the directory switch; `--browser default`.
+The fix is any **unmanaged** Chromium browser — same `--profile-directory`, same auto-create,
+same `Local State` format, no policy. That's usually a personal Chrome or Brave (rarely
+IT-deployed), but the point is "not managed by your org", not any specific product. Fallbacks
+without switching browsers: create the profile in the managed browser's UI and sign in once;
+bind to an existing profile and rely on `#@<tenant>` for the directory switch; `--browser
+default`.
 
 ## Not doing yet
 
