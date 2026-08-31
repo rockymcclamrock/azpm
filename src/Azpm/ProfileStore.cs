@@ -87,6 +87,14 @@ public sealed class ProfileStore(AzpmHome home)
     public void TouchLastUsed(string name) =>
         UpdateMeta(name, m => m.LastUsed = DateTimeOffset.UtcNow);
 
+    /// <summary>Show/hide a profile from the <c>azpm mcp</c> server.</summary>
+    public void SetMcpHidden(string name, bool hidden)
+    {
+        if (!Exists(name))
+            throw new AzpmException(ExitCode.ProfileNotFound, $"profile '{name}' not found");
+        UpdateMeta(name, m => m.McpHidden = hidden ? true : null);
+    }
+
     /// <summary>Records a fresh authentication (also counts as a use).</summary>
     public void MarkLoggedIn(string name) =>
         UpdateMeta(name, m =>

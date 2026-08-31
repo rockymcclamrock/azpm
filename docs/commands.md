@@ -20,11 +20,16 @@ Each profile is a directory `~/.azpm/profiles/<name>/` holding `config/` (the Az
 
 ---
 
-## `azpm mcp`
+## `azpm mcp`  /  `azpm mcp hide <name>`  /  `azpm mcp show <name>`
 
-Runs a read-only [MCP](https://modelcontextprotocol.io) server on stdio: an agent gets
-`azpm_list_profiles` and `azpm_az` (read-only `az` in a named profile). See
-[docs/mcp.md](mcp.md).
+`azpm mcp` runs a read-only [MCP](https://modelcontextprotocol.io) server on stdio: an agent gets
+`azpm_list_profiles` and `azpm_az` (read-only `az` in a named profile).
+
+`azpm mcp hide <name>` removes a profile from the server entirely — absent from
+`azpm_list_profiles`, and `azpm_az` refuses it. `azpm mcp show <name>` undoes it. `azpm ls` marks
+hidden profiles `(mcp:hidden)`.
+
+See [docs/mcp.md](mcp.md) for the read-only enforcement details.
 
 ## `azpm` (no arguments)
 

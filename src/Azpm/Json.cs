@@ -18,6 +18,9 @@ public sealed class ProfileMeta
 
     /// <summary>"user" (default, interactive) or "service-principal".</summary>
     public string? Kind { get; set; }
+
+    /// <summary>When true, <c>azpm mcp</c> hides this profile and refuses <c>azpm_az</c> for it.</summary>
+    public bool? McpHidden { get; set; }
 }
 
 /// <summary>

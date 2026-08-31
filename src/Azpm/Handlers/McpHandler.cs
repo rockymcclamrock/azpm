@@ -4,6 +4,19 @@ using Azpm.Mcp;
 
 namespace Azpm.Handlers;
 
+/// <summary><c>azpm mcp hide|show &lt;name&gt;</c> — control which profiles <c>azpm mcp</c> exposes.</summary>
+public sealed class McpVisibilityHandler(ProfileStore store, TextWriter output)
+{
+    public int Run(string name, bool hide)
+    {
+        store.SetMcpHidden(name, hide);
+        output.WriteLine(hide
+            ? $"'{name}' is now hidden from 'azpm mcp'."
+            : $"'{name}' is now visible to 'azpm mcp'.");
+        return ExitCode.Ok;
+    }
+}
+
 /// <summary><c>azpm mcp</c> — a read-only MCP server exposing the profiles and read-only <c>az</c>.</summary>
 public sealed class McpHandler(ProfileStore store, IAzRunner az, string version)
 {
@@ -24,6 +37,9 @@ public sealed class McpHandler(ProfileStore store, IAzRunner az, string version)
             var sb = new StringBuilder();
             foreach (var p in store.LoadAll())
             {
+                if (p.Meta?.McpHidden == true)
+                    continue; // opted out of MCP — see 'azpm mcp hide'
+
                 var s = p.ActiveSubscription;
                 sb.AppendLine(string.Join('\t',
                     p.Name == current ? "*" : "",
@@ -81,6 +97,11 @@ public sealed class McpHandler(ProfileStore store, IAzRunner az, string version)
             {
                 return new McpToolResult(ex.Message, IsError: true);
             }
+
+            if (profile.Meta?.McpHidden == true)
+                return new McpToolResult(
+                    $"profile '{profileName}' is hidden from MCP (run 'azpm mcp show {profileName}' to allow)",
+                    IsError: true);
 
             var r = az.Capture(profile.ConfigDir, [.. command, "--only-show-errors"], TimeSpan.FromSeconds(60));
             if (r.TimedOut)

@@ -33,7 +33,8 @@ public sealed class LsHandler(ProfileStore store, TextWriter output, Func<IAzRun
                 sub?.Name,
                 status,
                 isSp,
-                p.Meta?.LastLogin);
+                p.Meta?.LastLogin,
+                p.Meta?.McpHidden == true);
         }).ToList();
 
         if (json)
@@ -50,11 +51,14 @@ public sealed class LsHandler(ProfileStore store, TextWriter output, Func<IAzRun
 
         var table = new TextTable("", "NAME", "ACCOUNT", "TENANT", "SUBSCRIPTION", "STATUS", "LOGIN");
         foreach (var r in rows)
-            table.AddRow(r.Current ? "*" : "", r.Name + (r.ServicePrincipal ? " (sp)" : ""),
+            table.AddRow(r.Current ? "*" : "", r.Name + Tags(r),
                 r.Account ?? "-", r.Tenant ?? "-", r.Subscription ?? "-", r.Status, Ago(r.LastLogin));
         table.RenderTo(output);
         return ExitCode.Ok;
     }
+
+    private static string Tags(LsRow r) =>
+        (r.ServicePrincipal ? " (sp)" : "") + (r.McpHidden ? " (mcp:hidden)" : "");
 
     /// <summary>"3d ago" / "5h ago" / "12m ago" / "just now" / "-".</summary>
     private static string Ago(DateTimeOffset? when)
@@ -81,7 +85,8 @@ public sealed record LsRow(
     string? Subscription,
     string Status,
     bool ServicePrincipal,
-    DateTimeOffset? LastLogin);
+    DateTimeOffset? LastLogin,
+    bool McpHidden = false);
 
 [JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(List<LsRow>))]

@@ -37,6 +37,19 @@ scoped secret access shows up we'll revisit it as an explicit, separate opt-in â
 Only add profiles you're comfortable letting an agent read broadly (subscriptions, resource
 groups, resource configs, role assignments, `az ad` directory data).
 
+## Hiding a profile
+
+```
+azpm mcp hide prod      # drop 'prod' from the server entirely
+azpm mcp show prod      # undo
+```
+
+A hidden profile is absent from `azpm_list_profiles` and `azpm_az` refuses it before spawning
+`az`. `azpm ls` marks it `(mcp:hidden)`. Use this for a profile whose identity can see something
+you don't want an agent reading, without giving up the MCP server for your other profiles. The
+flag lives in that profile's `meta.json`; a fresh `azpm mcp` picks it up (restart the server /
+reload your client).
+
 ## Wiring it up
 
 **Claude Code:**

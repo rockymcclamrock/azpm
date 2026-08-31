@@ -281,6 +281,20 @@ mcpCmd.SetAction(r => Guard(() =>
     var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
     return new McpHandler(Store(r), AzCli.Locate(), version).Run(Console.In, Console.Out);
 }));
+
+var mcpHideName = new Argument<string>("name") { Description = "Profile name" };
+var mcpHideCmd = new Command("hide", "Hide a profile from 'azpm mcp' (drops it from the tool list and refuses azpm_az)")
+    { mcpHideName };
+mcpHideCmd.SetAction(r => Guard(() =>
+    new McpVisibilityHandler(Store(r), Console.Out).Run(r.GetValue(mcpHideName)!, hide: true)));
+mcpCmd.Subcommands.Add(mcpHideCmd);
+
+var mcpShowName = new Argument<string>("name") { Description = "Profile name" };
+var mcpShowCmd = new Command("show", "Make a hidden profile visible to 'azpm mcp' again") { mcpShowName };
+mcpShowCmd.SetAction(r => Guard(() =>
+    new McpVisibilityHandler(Store(r), Console.Out).Run(r.GetValue(mcpShowName)!, hide: false)));
+mcpCmd.Subcommands.Add(mcpShowCmd);
+
 root.Subcommands.Add(mcpCmd);
 
 // --- bare `azpm` -------------------------------------------------

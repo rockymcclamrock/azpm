@@ -252,4 +252,41 @@ public sealed class McpHandlerTests
         Assert.Empty(az.Calls);
         Assert.True(replies.Single().GetProperty("result").GetProperty("isError").GetBoolean());
     }
+
+    [Fact]
+    public void hidden_profiles_are_absent_from_list_profiles_and_refused_by_az()
+    {
+        using var t = new TempHome();
+        t.Store.Create("open", null, null);
+        t.WriteAzureProfile("open", "u@a", "a.example.com", "A");
+        t.Store.Create("secret", null, null);
+        t.WriteAzureProfile("secret", "u@b", "b.example.com", "B");
+        t.Store.SetMcpHidden("secret", true);
+
+        var (list, _) = Run(t,
+            """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"azpm_list_profiles","arguments":{}}}""");
+        var text = list.Single().GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+        Assert.Contains("open", text);
+        Assert.DoesNotContain("secret", text);
+
+        var (call, az) = Run(t,
+            """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"azpm_az","arguments":{"profile":"secret","command":["group","list"]}}}""");
+        Assert.Empty(az.Calls);
+        var result = call.Single().GetProperty("result");
+        Assert.True(result.GetProperty("isError").GetBoolean());
+        Assert.Contains("hidden from MCP", result.GetProperty("content")[0].GetProperty("text").GetString());
+    }
+
+    [Fact]
+    public void visibility_handler_toggles_the_meta_flag()
+    {
+        using var t = new TempHome();
+        t.Store.Create("p", null, null);
+
+        new McpVisibilityHandler(t.Store, TextWriter.Null).Run("p", hide: true);
+        Assert.True(t.Store.Load("p").Meta!.McpHidden);
+
+        new McpVisibilityHandler(t.Store, TextWriter.Null).Run("p", hide: false);
+        Assert.True(t.Store.Load("p").Meta!.McpHidden is null or false);
+    }
 }
