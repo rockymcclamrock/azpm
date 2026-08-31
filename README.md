@@ -220,6 +220,11 @@ Azure CLI (`az`) with interactive user accounts and service principals, plus Por
 integration and per-directory profiles. Azure PowerShell context isolation and OS-keychain
 secret storage are on the roadmap ([PLAN.md](PLAN.md)).
 
+## Security
+
+Trust boundaries, credential storage, and the MCP server's guarantees are documented in
+[SECURITY.md](SECURITY.md). Report vulnerabilities to redacted@example.invalid.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

@@ -34,11 +34,29 @@ Current: **`v0.2.2-pre`**, 21 commands, 121 tests, CI green on win/mac/linux.
 
 ---
 
+## Security review (2026-08-30, issues #11–#18)
+
+| # | Item | Status |
+|---|---|---|
+| 11 | MCP `--debug`/`--verbose` token leak | ✅ blocked + output scrubbed |
+| 12 | MCP "read-only" returned secrets | ✅ secret-surface denylist; `az rest` → GET/HEAD, no body, ARM-only |
+| 15 | MCP output unbounded | ✅ 256 KB cap |
+| 13a | `.azpm` name unvalidated | ✅ validated in `LocalHandler` |
+| 13b | `.azpm` trust model | ✅ `~/.azpm/trust.json` gate + `azpm local --allow` + `init --fullauto` opt-out |
+| 14 | `Load` name / `--browser-profile` / temp perms | ✅ all three |
+| 16 | `import` `string.Replace` path bug | ✅ `Path.GetRelativePath` + skip reparse points |
+| 17 | SP secret on argv + false Windows-ACL claim | ⏳ comment/docs fixed; argv + explicit ACL **deferred** (waiting on #9) |
+| 18 | SECURITY.md / threat model | ✅ `SECURITY.md` |
+
 ## Now / next
 
 - [ ] **Dogfood** on the real dev/prod tenants; log friction to `FEEDBACK.md`.
+- [ ] [#17](https://github.com/rockymcclamrock/azpm/issues/17) — SP secret off the `az login`
+      argv (`-p @file` / env var — needs an `az` capability check) + explicit Windows ACL.
+      Deferred pending #9; do the cheap half if #9 slips.
 - [ ] [#7](https://github.com/rockymcclamrock/azpm/issues/7) — run `shell` + `init` on a real
-      Linux/macOS box (bash/zsh/fish paths are built + unit-tested, never executed).
+      Linux/macOS box (bash/zsh/fish paths are built + unit-tested, never executed). Now also
+      covers the trust-gate hook branches (exit-5 nudge).
 - [ ] [#1](https://github.com/rockymcclamrock/azpm/issues/1) — S1 reboot re-check:
       `& C:\src\azp\scratch\s1\block6.ps1` after a restart, then delete `scratch/s1`.
 - [ ] [#10](https://github.com/rockymcclamrock/azpm/issues/10) — Azure PowerShell isolation
