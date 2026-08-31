@@ -4,23 +4,34 @@ using System.Text.Json.Serialization;
 namespace Azpm.Handlers;
 
 /// <summary><c>azpm ls</c> — list every profile with its account, tenant, subscription and status.</summary>
-public sealed class LsHandler(ProfileStore store, TextWriter output)
+public sealed class LsHandler(ProfileStore store, TextWriter output, Func<IAzRunner>? azFactory = null)
 {
-    public int Run(bool json)
+    public int Run(bool json, bool check = false)
     {
         var current = Environment.GetEnvironmentVariable("AZPM_PROFILE");
+        var az = check ? (azFactory ?? throw new AzpmException(ExitCode.AzNotFound, "--check needs 'az'"))() : null;
+
         var rows = store.LoadAll().Select(p =>
         {
             var sub = p.ActiveSubscription;
             var isSp = p.Meta?.Kind == "service-principal"
                 || string.Equals(sub?.User?.Type, "servicePrincipal", StringComparison.OrdinalIgnoreCase);
+
+            var status = p.Status;
+            if (az is not null && status == "ready")
+            {
+                var r = az.Capture(p.ConfigDir, ["account", "get-access-token", "--output", "none"],
+                    TimeSpan.FromSeconds(20));
+                status = r.TimedOut ? "check timed out" : r.ExitCode == 0 ? "valid" : "needs login";
+            }
+
             return new LsRow(
                 p.Name,
                 p.Name == current,
                 sub?.User?.Name,
                 sub?.TenantDefaultDomain ?? sub?.TenantId,
                 sub?.Name,
-                p.Status,
+                status,
                 isSp);
         }).ToList();
 

@@ -31,10 +31,13 @@ Creates `profiles/<name>/` and runs `az login` into it. Fails if the profile exi
 on POSIX — OS-keychain storage is [#9](https://github.com/rockymcclamrock/azpm/issues/9)).
 `azpm ls` marks these `(sp)`.
 
-## `azpm ls` / `azpm list` `[--json]`
+## `azpm ls` / `azpm list` `[--json] [--check]`
 
-Table of every profile: name, account, tenant, active subscription, status
-(`ready` / `logged out`). Marks the current `AZPM_PROFILE` with `*`.
+Table of every profile: name, account, tenant, active subscription, status. Marks the current
+`AZPM_PROFILE` with `*` and service principals with `(sp)`.
+
+Status is `ready` / `logged out` from local files (fast). With `--check` it actually asks `az`
+for a token per profile (`valid` / `needs login` / `check timed out`) — a few seconds each.
 
 ## `azpm path <name>`
 

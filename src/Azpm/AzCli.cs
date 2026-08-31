@@ -43,15 +43,46 @@ public sealed class AzCli : IAzRunner
 
     public int Run(string configDir, IReadOnlyList<string> args)
     {
-        var psi = new ProcessStartInfo(_exe) { UseShellExecute = false };
-        foreach (var a in _prefixArgs) psi.ArgumentList.Add(a);
-        foreach (var a in args) psi.ArgumentList.Add(a);
-        psi.Environment["AZURE_CONFIG_DIR"] = configDir;
-
+        var psi = BaseStartInfo(configDir, args);
         using var process = Process.Start(psi)
             ?? throw new AzpmException(ExitCode.AzFailed, "failed to start 'az'");
         process.WaitForExit();
         return process.ExitCode;
+    }
+
+    public AzResult Capture(string configDir, IReadOnlyList<string> args, TimeSpan timeout)
+    {
+        var psi = BaseStartInfo(configDir, args);
+        psi.RedirectStandardOutput = true;
+        psi.RedirectStandardError = true;
+        psi.RedirectStandardInput = true;
+
+        using var process = Process.Start(psi)
+            ?? throw new AzpmException(ExitCode.AzFailed, "failed to start 'az'");
+
+        var stdout = new System.Text.StringBuilder();
+        process.OutputDataReceived += (_, e) => { if (e.Data is not null) stdout.AppendLine(e.Data); };
+        process.ErrorDataReceived += (_, _) => { };
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        process.StandardInput.Close();
+
+        if (!process.WaitForExit((int)timeout.TotalMilliseconds))
+        {
+            try { process.Kill(entireProcessTree: true); } catch { /* already gone */ }
+            return new AzResult(-1, "", TimedOut: true);
+        }
+        process.WaitForExit(); // let the async readers drain
+        return new AzResult(process.ExitCode, stdout.ToString(), TimedOut: false);
+    }
+
+    private ProcessStartInfo BaseStartInfo(string configDir, IReadOnlyList<string> args)
+    {
+        var psi = new ProcessStartInfo(_exe) { UseShellExecute = false };
+        foreach (var a in _prefixArgs) psi.ArgumentList.Add(a);
+        foreach (var a in args) psi.ArgumentList.Add(a);
+        psi.Environment["AZURE_CONFIG_DIR"] = configDir;
+        return psi;
     }
 
     private static string? FindOnPath(string[] candidates)

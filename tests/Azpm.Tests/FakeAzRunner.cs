@@ -11,6 +11,13 @@ public sealed class FakeAzRunner : IAzRunner
     public List<(string ConfigDir, string[] Args)> Calls { get; } = [];
 
     public int ExitCode { get; set; }
+    public AzResult CaptureResult { get; set; } = new(0, "", false);
+
+    public AzResult Capture(string configDir, IReadOnlyList<string> args, TimeSpan timeout)
+    {
+        Calls.Add((configDir, [.. args]));
+        return CaptureResult;
+    }
     public bool SimulateLoginWritesProfile { get; set; } = true;
     public string LoginAccount { get; set; } = "user@contoso.example.com";
     public string LoginTenantDomain { get; set; } = "contoso.example.com";

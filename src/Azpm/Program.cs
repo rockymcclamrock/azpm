@@ -77,9 +77,11 @@ root.Subcommands.Add(renameCmd);
 
 // --- ls --------------------------------------------------------------------
 var lsJson = new Option<bool>("--json") { Description = "Emit JSON instead of a table" };
-var lsCmd = new Command("ls", "List profiles") { lsJson };
+var lsCheck = new Option<bool>("--check") { Description = "Actually probe each profile's token (slower; needs 'az')" };
+var lsCmd = new Command("ls", "List profiles") { lsJson, lsCheck };
 lsCmd.Aliases.Add("list");
-lsCmd.SetAction(r => Guard(() => new LsHandler(Store(r), Console.Out).Run(r.GetValue(lsJson))));
+lsCmd.SetAction(r => Guard(() => new LsHandler(Store(r), Console.Out, AzCli.Locate).Run(
+    r.GetValue(lsJson), r.GetValue(lsCheck))));
 root.Subcommands.Add(lsCmd);
 
 // --- path -----------------------------------------------------------------

@@ -76,6 +76,42 @@ public sealed class LsHandlerTests
     }
 
     [Fact]
+    public void Ls_check_probes_ready_profiles_and_reports_token_state()
+    {
+        using var t = new TempHome();
+        t.Store.Create("good", null, null);
+        t.WriteAzureProfile("good", "u@x", "x.example.com", "Sub");
+        t.Store.Create("stale", null, null);
+        t.WriteAzureProfile("stale", "u@y", "y.example.com", "Sub");
+        t.Store.Create("out", null, null); // logged out -> not probed
+
+        var az = new FakeAzRunner();
+        // one runner instance, so make it fail: exercises the "needs login" branch
+        az.CaptureResult = new AzResult(1, "", false);
+
+        var sw = new StringWriter();
+        new LsHandler(t.Store, sw, () => az).Run(json: false, check: true);
+        var outp = sw.ToString();
+
+        Assert.Contains("needs login", outp);
+        Assert.Contains("logged out", outp);          // "out" profile, never probed
+        Assert.Equal(2, az.Calls.Count(c => c.Args is ["account", "get-access-token", ..]));
+    }
+
+    [Fact]
+    public void Ls_check_marks_valid_when_az_succeeds()
+    {
+        using var t = new TempHome();
+        t.Store.Create("good", null, null);
+        t.WriteAzureProfile("good", "u@x", "x.example.com", "Sub");
+
+        var sw = new StringWriter();
+        new LsHandler(t.Store, sw, () => new FakeAzRunner()).Run(json: false, check: true);
+
+        Assert.Contains("valid", sw.ToString());
+    }
+
+    [Fact]
     public void Ls_json_is_valid_and_ordered()
     {
         using var t = new TempHome();
