@@ -18,6 +18,12 @@ Running notes from using `azpm` on real dev/prod tenants. Raw — triage into is
   `login_hint` for the profile's account. Real fix is one account per browser profile — now
   called out in the `portal` output and docs.
 
+- **`azpm use` / `azpm init` are genuinely confusing to a first-time user** — took several
+  rounds to explain the "a program can't change its parent shell" idea. v0.2.4: hints reworded
+  (no "shell integration" phrase), cmd.exe path fixed, README rebuilt around "which command do
+  I use" + a real `--auto` scenario. Longer-term: maybe `use`/`init` shouldn't surface until
+  the user opts in, and `shell` should be even more clearly *the* answer.
+
 ### Still open
 
 -
