@@ -211,9 +211,14 @@ through your profiles without switching your context or being able to change any
 
 ## Install
 
-Prebuilt single-file binaries (no runtime needed) are on each
-[release](https://github.com/rockymcclamrock/azpm/releases) — `win-x64`, `linux-x64`,
-`osx-arm64`. Download, check the `.sha256`, put `azpm` on your `PATH`.
+Prebuilt single-file binaries (no runtime needed) are on the
+[latest release](https://github.com/rockymcclamrock/azpm/releases/latest) — `win-x64`,
+`linux-x64`, `osx-arm64`. Grab `azpm-<platform>.tar.gz`, verify it against the `.sha256`,
+extract, and put `azpm` on your `PATH`:
+
+```bash
+tar xzf azpm-linux-x64.tar.gz && install azpm ~/.local/bin/   # adjust for your platform
+```
 
 Or build from source (needs the .NET 10 SDK):
 
