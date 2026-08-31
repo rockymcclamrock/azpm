@@ -5,15 +5,12 @@ explicit about what it does and does not protect.
 
 ## Reporting a vulnerability
 
-Use GitHub's **private vulnerability reporting**: the repository's **Security**
-tab → **Report a vulnerability**. Include a description and, if you have one, a
-proof of concept. Please don't open a regular issue or PR for anything
-exploitable — that discloses it publicly before there's a fix.
+Use GitHub's [**private vulnerability reporting**][pvr]: the **Security** tab →
+**Report a vulnerability**. Include a description and, if you have one, a proof
+of concept. Please don't open a regular issue or PR for anything exploitable —
+that discloses it publicly before there's a fix.
 
-<!-- maintainer: enable private vulnerability reporting (Settings → Advanced
-Security) when this repo goes public; it is not available while the repo is
-private. Until then, collaborators should contact the maintainer through GitHub
-rather than filing an issue. -->
+[pvr]: https://github.com/rockymcclamrock/azpm/security/advisories/new
 
 Expect an acknowledgement within a few days.
 

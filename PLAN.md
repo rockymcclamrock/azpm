@@ -50,16 +50,16 @@ Current: **`v0.4.0-pre`**, 23 commands, 237 tests, CI green on win/mac/linux.
 | 18 | SECURITY.md / threat model | ✅ `SECURITY.md` |
 | 19 | per-profile MCP opt-out | ✅ `azpm mcp hide/show` |
 
-## Before making the repo public
+## Public (2026-08-31)
 
-- [ ] Enable **private vulnerability reporting** (Settings → Advanced Security) — not available
-      while private; `SECURITY.md` already points at it.
-- [ ] Review open issues for any **unfixed** weakness described with a working repro. (As of the
-      #11–#19 sweep none of the security issues are open; re-check before flipping public.)
-- [ ] Consider converting future security reports to **GitHub Security Advisories** (private
-      draft → published, optional CVE) instead of plain issues.
-- [ ] `git log` and closed-issue comments already contain `redacted@example.invalid` (commit author) and the
-      full fix narratives — fine post-fix, but be aware they become visible.
+- [x] Repo made public; **private vulnerability reporting**, Dependabot alerts, and automated
+      security fixes enabled. `SECURITY.md` points at the advisory form.
+- [x] History rewritten before flipping (`git filter-repo`): commit author/committer email →
+      GitHub `noreply`; a real tenant GUID + employer domain in one test file → placeholders.
+      All `v*-pre` dev tags + their prereleases deleted (their commits carried the old email).
+      Issue-comment commit SHAs remapped to the rewritten hashes.
+- [ ] Future security reports → **GitHub Security Advisories** (private draft → publish, optional
+      CVE), not plain issues.
 
 ## Now / next
 
