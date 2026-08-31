@@ -3,8 +3,9 @@
 ## Problem
 
 `azpm` fixes the CLI side of multi-tenant Azure. The browser side is still a mess: one Portal
-session at a time, constant "switch directory" dances, wrong-tenant clicks. The AWS crowd solves
-this with browser-profile / container integration (`granted`'s `assume -c`).
+session at a time, constant "switch directory" dances, wrong-tenant clicks. The fix is to give
+each tenant its own browser profile (its own cookie jar) and always open the Portal in the
+right one.
 
 ## Approach
 

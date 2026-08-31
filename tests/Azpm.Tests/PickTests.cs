@@ -66,5 +66,6 @@ public sealed class PickTests
         Assert.Contains("1", text);
         Assert.Contains("alpha", text);
         Assert.Contains("a@x.example.com", text);
+        Assert.Contains("azpm --help", text);   // help pointer on the bare-azpm screen
     }
 }

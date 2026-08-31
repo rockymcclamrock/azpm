@@ -26,6 +26,9 @@ public sealed class PickHandler(ProfileStore store, TextReader input, TextWriter
                 sub?.User?.Name ?? "-", sub?.Name ?? "-", p.Status);
         }
         table.RenderTo(output);
+        output.WriteLine();
+        output.WriteLine("run 'azpm --help' for the full command list");
+        output.WriteLine();
 
         error.Write($"Open a shell for which profile? [1-{profiles.Count}, or Enter to cancel] ");
         var line = input.ReadLine()?.Trim();

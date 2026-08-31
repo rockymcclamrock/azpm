@@ -5,8 +5,9 @@
 >
 > [rel]: https://github.com/rockymcclamrock/azpm/releases
 
-`aws-vault` / `granted`, but for Azure. Named, isolated Azure CLI logins you switch between
-instantly — no re-login, no "which tenant am I in", no clobbering your other account.
+Named, isolated Azure CLI logins you switch between instantly — no re-login, no "which tenant am
+I in", no clobbering your other account. Work across a dev tenant and a prod tenant (each with
+its own account) without the two ever touching.
 
 ```
 azpm add dev
@@ -230,14 +231,13 @@ See [docs/building.md](docs/building.md) — Windows Native AOT also needs `vswh
 
 ---
 
-## Not the same as `azctx` / `aztx`
-
-Those switch the active **subscription within one login**. `azpm` manages **multiple independent
-logins** — different tenants, different accounts — side by side.
-
 ## Scope
 
-Azure CLI (`az`) with interactive user accounts and service principals, plus Portal browser
+`azpm` manages **multiple independent Azure CLI logins** — different tenants, different accounts,
+side by side. It is not a subscription switcher: choosing the active subscription *within* one
+login is what `az account set` already does.
+
+It covers `az` with interactive user accounts and service principals, plus Portal browser
 integration and per-directory profiles. Azure PowerShell context isolation and OS-keychain
 secret storage are on the roadmap ([PLAN.md](PLAN.md)).
 

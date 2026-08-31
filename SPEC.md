@@ -3,7 +3,7 @@
 **Status:** design overview — problem, decisions, and scope. Behaviour that has shipped is
 documented in [docs/commands.md](docs/commands.md); this is the "why".
 **Name:** `azpm` (azure profile manager)
-**One-liner:** `aws-vault` / `granted` for Azure — named, isolated login profiles you switch between instantly, no re-login.
+**One-liner:** named, isolated Azure CLI login profiles you switch between instantly — no re-login, no clobbering.
 
 > Named `azpm` rather than `azp` because `AZP_*` is Azure Pipelines' self-hosted-agent env-var
 > namespace (`AZP_URL`, `AZP_TOKEN`, …) and `azp-cli` was already taken.
@@ -20,21 +20,19 @@ user account) is painful with the stock tooling:
 - `az account set` only switches *subscriptions within the accounts you're currently logged into* —
   it does nothing for multi-tenant / multi-account.
 - There is no first-party "profiles" concept. Prior art is blog posts, `AZURE_CONFIG_DIR` shell
-  hacks, and one-off scripts. Nothing polished, nothing Windows-first.
-- The AWS world solved this years ago (`aws-vault`, `granted`/`assume`). Azure has an
+  hacks, and one-off scripts. Nothing polished, nothing Windows-first. See the
   [open Terraform issue](https://github.com/hashicorp/terraform-provider-azurerm/issues/26577)
   and years of complaints.
 
 ### Who feels this
 
-Azure consultants, CSP partners, MSPs, and any team with a dev/prod tenant split. The AWS
-equivalents have tens of thousands of users.
+Azure consultants, CSP partners, MSPs, and any team with a dev/prod tenant split.
 
-### Not the same as the existing tools
+### Not a subscription switcher
 
-[`azctx`](https://github.com/whiteducksoftware/azctx), [`aztx`](https://github.com/riweston/aztx),
-`azcx` switch the **active subscription within one login**. `azpm` manages **multiple independent
-logins** (different tenants, different accounts) side by side. Different problem.
+The existing Azure context tools switch the **active subscription within one login**. `azpm`
+manages **multiple independent logins** (different tenants, different accounts) side by side —
+a different problem, layered underneath.
 
 ---
 
@@ -147,7 +145,7 @@ switching and (v0.2) directory auto-switch.
 - Service principals (`--service-principal`, cert auth)
 - Azure PowerShell context isolation (`AzureRmContext` redirection)
 - `ARM_*` / `AZURE_*` export for Terraform / Bicep / SDKs
-- Keychain-locked token cache (materialize on use — the `aws-vault` security model)
+- Keychain-locked secret storage (encrypt the SP secret / token cache at rest, materialize on use)
 - TUI picker (`azpm` with no args)
 - MCP server (let Claude run `az` in the right context)
 - `azpm rename`, `azpm clone`, import from existing `~/.azure`
