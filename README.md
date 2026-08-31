@@ -138,6 +138,11 @@ PS C:\>                                      # left both trees → back to defau
 You never type an `azpm` command, and you **can't** `terraform apply` the wrong environment —
 the identity is nailed to the directory.
 
+**Trust:** because a `.azpm` can name any profile you have, `--auto` only follows files you've
+approved. `azpm local <name>` approves the one it writes; `azpm local --allow` approves an
+existing file (e.g. one from a cloned repo); editing a file re-arms the check. Don't want it?
+`azpm init <shell> --fullauto` skips the trust check entirely.
+
 ---
 
 ## `azpm portal` — the Portal in the right browser, right tenant

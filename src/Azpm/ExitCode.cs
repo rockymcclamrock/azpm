@@ -8,5 +8,9 @@ public static class ExitCode
     public const int ProfileNotFound = 2;
     public const int AzNotFound = 3;
     public const int AzFailed = 4;
+
+    /// <summary><c>local --resolve</c>: a <c>.azpm</c> is present but not trusted for <c>--auto</c>.</summary>
+    public const int NotTrusted = 5;
+
     public const int Interrupted = 130;
 }

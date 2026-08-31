@@ -153,6 +153,33 @@ public sealed class ShellIntegrationTests
     public void InitHeader_shows_the_setup_line() =>
         Assert.Contains("eval \"$(azpm init zsh --auto)\"", ShellIntegration.InitHeader(ShellKind.Zsh, auto: true));
 
+    [Theory]
+    [InlineData(ShellKind.PowerShell)]
+    [InlineData(ShellKind.Bash)]
+    [InlineData(ShellKind.Fish)]
+    public void AutoHook_uses_the_trust_gated_resolve_by_default(ShellKind kind)
+    {
+        var hook = ShellIntegration.AutoHookScript(kind, "/x/azpm");
+        Assert.Contains("local --resolve", hook);
+        Assert.DoesNotContain("--trust-all", hook);
+        Assert.Contains("not trusted", hook); // the one-time nudge on exit 5
+    }
+
+    [Theory]
+    [InlineData(ShellKind.PowerShell)]
+    [InlineData(ShellKind.Bash)]
+    [InlineData(ShellKind.Fish)]
+    public void FullAuto_hook_skips_the_trust_check(ShellKind kind)
+    {
+        var hook = ShellIntegration.AutoHookScript(kind, "/x/azpm", trustAll: true);
+        Assert.Contains("local --resolve --trust-all", hook);
+    }
+
+    [Fact]
+    public void SetupLine_reflects_fullauto() =>
+        Assert.Equal("eval \"$(azpm init bash --fullauto)\"",
+            ShellIntegration.SetupLine(ShellKind.Bash, auto: true, fullAuto: true));
+
     [Fact]
     public void Deactivate_emits_an_unset_for_the_shell()
     {

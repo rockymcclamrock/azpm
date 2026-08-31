@@ -70,17 +70,89 @@ public sealed class LocalTests : IDisposable
     }
 
     [Fact]
-    public void Resolve_flags_a_dotazpm_that_names_a_missing_profile()
+    public void Resolve_flags_a_trusted_dotazpm_that_names_a_missing_profile()
     {
         using var t = new TempHome();
         Directory.SetCurrentDirectory(_work);
         File.WriteAllText(Path.Combine(_work, ".azpm"), "ghost\n");
+        new LocalTrust(t.Home).Allow(Path.Combine(_work, ".azpm"));
 
         var errw = new StringWriter();
         var code = new LocalHandler(t.Store, new StringWriter(), errw).Resolve();
 
         Assert.Equal(ExitCode.ProfileNotFound, code);
         Assert.Contains("ghost", errw.ToString());
+    }
+
+    [Fact]
+    public void Resolve_does_not_follow_an_untrusted_dotazpm()
+    {
+        using var t = new TempHome();
+        t.Store.Create("prod", null, null);
+        Directory.SetCurrentDirectory(_work);
+        File.WriteAllText(Path.Combine(_work, ".azpm"), "prod\n");
+
+        var outw = new StringWriter();
+        var code = new LocalHandler(t.Store, outw, new StringWriter()).Resolve();
+
+        Assert.Equal(ExitCode.NotTrusted, code);
+        Assert.Equal("", outw.ToString().Trim());
+    }
+
+    [Fact]
+    public void Resolve_follows_an_untrusted_dotazpm_when_trustAll()
+    {
+        using var t = new TempHome();
+        t.Store.Create("prod", null, null);
+        Directory.SetCurrentDirectory(_work);
+        File.WriteAllText(Path.Combine(_work, ".azpm"), "prod\n");
+
+        var outw = new StringWriter();
+        var code = new LocalHandler(t.Store, outw, new StringWriter()).Resolve(trustAll: true);
+
+        Assert.Equal(ExitCode.Ok, code);
+        Assert.Equal("prod", outw.ToString().Trim());
+    }
+
+    [Fact]
+    public void Allow_then_Resolve_follows_the_file()
+    {
+        using var t = new TempHome();
+        t.Store.Create("prod", null, null);
+        Directory.SetCurrentDirectory(_work);
+        File.WriteAllText(Path.Combine(_work, ".azpm"), "prod\n");
+
+        Assert.Equal(ExitCode.Ok, new LocalHandler(t.Store, new StringWriter(), new StringWriter()).Allow());
+        Assert.Equal(ExitCode.Ok, new LocalHandler(t.Store, new StringWriter(), new StringWriter()).Resolve());
+    }
+
+    [Fact]
+    public void Editing_a_trusted_dotazpm_revokes_trust()
+    {
+        using var t = new TempHome();
+        t.Store.Create("prod", null, null);
+        t.Store.Create("dev", null, null);
+        Directory.SetCurrentDirectory(_work);
+        var file = Path.Combine(_work, ".azpm");
+        File.WriteAllText(file, "prod\n");
+        new LocalHandler(t.Store, new StringWriter(), new StringWriter()).Allow();
+
+        File.WriteAllText(file, "dev\n"); // someone changed which identity this dir selects
+
+        Assert.Equal(ExitCode.NotTrusted,
+            new LocalHandler(t.Store, new StringWriter(), new StringWriter()).Resolve());
+    }
+
+    [Fact]
+    public void Set_trusts_the_file_it_writes()
+    {
+        using var t = new TempHome();
+        t.Store.Create("prod", null, null);
+        Directory.SetCurrentDirectory(_work);
+
+        new LocalHandler(t.Store, new StringWriter(), new StringWriter()).Set("prod");
+
+        Assert.Equal(ExitCode.Ok, new LocalHandler(t.Store, new StringWriter(), new StringWriter()).Resolve());
     }
 
     [Fact]

@@ -64,10 +64,10 @@ public static class ShellIntegration
     };
 
     /// <summary>The one line that wires up <c>azpm use</c> / <c>deactivate</c> for a shell.</summary>
-    public static string SetupLine(ShellKind kind, bool auto = false)
+    public static string SetupLine(ShellKind kind, bool auto = false, bool fullAuto = false)
     {
         var name = ShellName(kind);
-        var flag = auto ? " --auto" : "";
+        var flag = fullAuto ? " --fullauto" : auto ? " --auto" : "";
         return kind is ShellKind.Pwsh or ShellKind.PowerShell
             ? $"azpm init {name}{flag} | Out-String | Invoke-Expression"
             : kind is ShellKind.Fish
@@ -75,13 +75,19 @@ public static class ShellIntegration
                 : $"eval \"$(azpm init {name}{flag})\"";
     }
 
-    public static string InitHeader(ShellKind kind, bool auto) => $"""
-        # This is a {ShellName(kind)} snippet — it does nothing on its own.
-        # Add this one line to {ProfileFile(kind)}, then open a new shell:
-        #     {SetupLine(kind, auto)}
-        # (it enables 'azpm use' / 'azpm deactivate'{(auto ? " and .azpm auto-switching" : "")} in that shell.)
+    public static string InitHeader(ShellKind kind, bool auto, bool fullAuto = false)
+    {
+        var extra = fullAuto
+            ? " and .azpm auto-switching (no trust check — follows any .azpm)"
+            : auto ? " and .azpm auto-switching (approved files only — 'azpm local allow')" : "";
+        return $"""
+            # This is a {ShellName(kind)} snippet — it does nothing on its own.
+            # Add this one line to {ProfileFile(kind)}, then open a new shell:
+            #     {SetupLine(kind, auto, fullAuto)}
+            # (it enables 'azpm use' / 'azpm deactivate'{extra} in that shell.)
 
-        """;
+            """;
+    }
 
     public static string InitScript(ShellKind kind, string exePath)
     {
@@ -136,65 +142,97 @@ public static class ShellIntegration
     /// <summary>
     /// The <c>azpm init --auto</c> directory hook: on each directory change, reconcile the shell
     /// to the nearest <c>.azpm</c> file (like nvm/direnv). Auto-set profiles are tracked in
-    /// <c>AZPM_AUTO</c> so a manual <c>azpm use</c> isn't clobbered.
+    /// <c>AZPM_AUTO</c> so a manual <c>azpm use</c> isn't clobbered. A <c>.azpm</c> that hasn't
+    /// been approved (<c>azpm local allow</c>) is not followed — <paramref name="trustAll"/>
+    /// (from <c>init --fullauto</c>) drops that gate.
     /// </summary>
-    public static string AutoHookScript(ShellKind kind, string exePath) => kind switch
+    public static string AutoHookScript(ShellKind kind, string exePath, bool trustAll = false)
     {
-        ShellKind.Pwsh or ShellKind.PowerShell => $$"""
-            $global:__azpm_pwd = $null
-            $global:__azpm_prompt_base = $function:prompt
-            function prompt {
-                if ($PWD.Path -ne $global:__azpm_pwd) {
-                    $global:__azpm_pwd = $PWD.Path
-                    $want = & {{PoshLit(exePath)}} local --resolve 2>$null
-                    if ($LASTEXITCODE -ne 0) { $want = '' }
-                    if ($want -ne $env:AZPM_PROFILE) {
-                        if ($want) { azpm use $want | Out-Null; $env:AZPM_AUTO = $want }
-                        elseif ($env:AZPM_PROFILE -and $env:AZPM_AUTO -eq $env:AZPM_PROFILE) {
-                            azpm deactivate | Out-Null; $env:AZPM_AUTO = $null
+        var resolve = trustAll ? "local --resolve --trust-all" : "local --resolve";
+        return kind switch
+        {
+            ShellKind.Pwsh or ShellKind.PowerShell => $$"""
+                $global:__azpm_pwd = $null
+                $global:__azpm_prompt_base = $function:prompt
+                function prompt {
+                    if ($PWD.Path -ne $global:__azpm_pwd) {
+                        $global:__azpm_pwd = $PWD.Path
+                        $want = & {{PoshLit(exePath)}} {{resolve}} 2>$null
+                        $rc = $LASTEXITCODE
+                        if ($rc -eq 5) {
+                            if ($global:__azpm_warned -ne $PWD.Path) {
+                                $global:__azpm_warned = $PWD.Path
+                                Write-Warning "azpm: .azpm here is not trusted; run 'azpm local allow' to auto-switch"
+                            }
+                            $want = ''
+                        } elseif ($rc -ne 0) { $want = '' }
+                        if ($want -ne $env:AZPM_PROFILE) {
+                            if ($want) { azpm use $want | Out-Null; $env:AZPM_AUTO = $want }
+                            elseif ($env:AZPM_PROFILE -and $env:AZPM_AUTO -eq $env:AZPM_PROFILE) {
+                                azpm deactivate | Out-Null; $env:AZPM_AUTO = $null
+                            }
                         }
                     }
+                    & $global:__azpm_prompt_base
                 }
-                & $global:__azpm_prompt_base
-            }
 
-            """,
-        ShellKind.Fish => $$"""
-            function __azpm_auto --on-variable PWD
-                set -l want ({{ShLit(exePath)}} local --resolve 2>/dev/null)
-                if test "$want" != "$AZPM_PROFILE"
-                    if test -n "$want"
-                        azpm use $want >/dev/null; set -gx AZPM_AUTO $want
-                    else if test -n "$AZPM_PROFILE" -a "$AZPM_AUTO" = "$AZPM_PROFILE"
-                        azpm deactivate >/dev/null; set -e AZPM_AUTO
+                """,
+            ShellKind.Fish => $$"""
+                function __azpm_auto --on-variable PWD
+                    set -l want ({{ShLit(exePath)}} {{resolve}} 2>/dev/null)
+                    set -l rc $status
+                    if test $rc -eq 5
+                        if test "$__azpm_warned" != "$PWD"
+                            set -g __azpm_warned "$PWD"
+                            echo "azpm: .azpm here is not trusted; run 'azpm local allow' to auto-switch" >&2
+                        end
+                        set want ""
+                    else if test $rc -ne 0
+                        set want ""
+                    end
+                    if test "$want" != "$AZPM_PROFILE"
+                        if test -n "$want"
+                            azpm use $want >/dev/null; set -gx AZPM_AUTO $want
+                        else if test -n "$AZPM_PROFILE" -a "$AZPM_AUTO" = "$AZPM_PROFILE"
+                            azpm deactivate >/dev/null; set -e AZPM_AUTO
+                        end
                     end
                 end
-            end
-            __azpm_auto
+                __azpm_auto
 
-            """,
-        _ => $$"""
-            __azpm_auto() {
-                [ "$PWD" = "$__azpm_pwd" ] && return
-                __azpm_pwd="$PWD"
-                local want
-                want="$(command {{ShLit(exePath)}} local --resolve 2>/dev/null)" || want=""
-                if [ "$want" != "$AZPM_PROFILE" ]; then
-                    if [ -n "$want" ]; then
-                        eval "$(command {{ShLit(exePath)}} use "$want" --emit)"; export AZPM_AUTO="$want"
-                    elif [ -n "$AZPM_PROFILE" ] && [ "$AZPM_AUTO" = "$AZPM_PROFILE" ]; then
-                        eval "$(command {{ShLit(exePath)}} deactivate --emit)"; unset AZPM_AUTO
+                """,
+            _ => $$"""
+                __azpm_auto() {
+                    [ "$PWD" = "$__azpm_pwd" ] && return
+                    __azpm_pwd="$PWD"
+                    local want rc
+                    want="$(command {{ShLit(exePath)}} {{resolve}} 2>/dev/null)"; rc=$?
+                    if [ "$rc" = 5 ]; then
+                        if [ "$__azpm_warned" != "$PWD" ]; then
+                            __azpm_warned="$PWD"
+                            printf "azpm: .azpm here is not trusted; run 'azpm local allow' to auto-switch\n" >&2
+                        fi
+                        want=""
+                    elif [ "$rc" != 0 ]; then
+                        want=""
                     fi
-                fi
-            }
-            case "${PROMPT_COMMAND:-}" in
-                *__azpm_auto*) ;;
-                *) PROMPT_COMMAND="__azpm_auto${PROMPT_COMMAND:+; $PROMPT_COMMAND}" ;;
-            esac
-            __azpm_auto
+                    if [ "$want" != "$AZPM_PROFILE" ]; then
+                        if [ -n "$want" ]; then
+                            eval "$(command {{ShLit(exePath)}} use "$want" --emit)"; export AZPM_AUTO="$want"
+                        elif [ -n "$AZPM_PROFILE" ] && [ "$AZPM_AUTO" = "$AZPM_PROFILE" ]; then
+                            eval "$(command {{ShLit(exePath)}} deactivate --emit)"; unset AZPM_AUTO
+                        fi
+                    fi
+                }
+                case "${PROMPT_COMMAND:-}" in
+                    *__azpm_auto*) ;;
+                    *) PROMPT_COMMAND="__azpm_auto${PROMPT_COMMAND:+; $PROMPT_COMMAND}" ;;
+                esac
+                __azpm_auto
 
-            """,
-    };
+                """,
+        };
+    }
 
     /// <summary>PowerShell single-quoted literal.</summary>
     private static string PoshLit(string s) => "'" + s.Replace("'", "''") + "'";

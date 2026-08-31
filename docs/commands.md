@@ -179,15 +179,16 @@ azpm deactivate       # clears them (back to the default ~/.azure)
 Without the `init` wrapper, `azpm use <name>` just prints the script — pipe it to your shell's
 eval yourself. `cmd` has no wrapper; use `azpm shell` there.
 
-## `azpm local [<name>] [--unset]`  +  `azpm init <shell> --auto`
+## `azpm local [<name>] [--allow] [--unset]`  +  `azpm init <shell> --auto`
 
 Per-directory profiles, like `.nvmrc`. `azpm local prod` writes a `.azpm` file (one line: the
 profile name) in the current directory; it applies to that directory and everything under it.
 
 ```
-cd ~/work/acme && azpm local prod      # writes ~/work/acme/.azpm
-azpm local                             # show the profile resolved for the cwd
-azpm local --unset                     # remove ./.azpm
+cd ~/work/acme && azpm local prod      # writes ~/work/acme/.azpm (and trusts it)
+azpm local                             # show the profile resolved for the cwd + trust state
+azpm local --allow                     # trust an existing .azpm you didn't write here
+azpm local --unset                     # remove ./.azpm and its trust entry
 ```
 
 Add `--auto` to `init` and the shell follows `.azpm` files as you `cd` (nvm/direnv style):
@@ -198,3 +199,18 @@ eval "$(azpm init bash --auto)"
 
 Auto-switched profiles are tracked in `AZPM_AUTO`, so a manual `azpm use` in the same tree
 isn't clobbered — but leaving a tree with no `.azpm` clears an auto-set profile.
+
+### Trust
+
+A `.azpm` file checked into a repo can name **any** profile you already have, so cloning a repo
+and `cd`-ing into it could otherwise switch your live Azure identity with no prompt. `--auto`
+therefore only follows a `.azpm` you've **approved**:
+
+- `azpm local <name>` approves the file it writes (the common case needs nothing extra).
+- `azpm local --allow` approves the `.azpm` in the current directory.
+- Editing an approved `.azpm` revokes trust until you `--allow` it again.
+- Approvals live in `~/.azpm/trust.json` (absolute path → content hash).
+
+An unapproved `.azpm` makes the hook print a one-time notice and not switch. If you'd rather skip
+this entirely, use `azpm init <shell> --fullauto` — same as `--auto` but with no trust check
+(follows any `.azpm`). The invalid-name check still applies in both modes.

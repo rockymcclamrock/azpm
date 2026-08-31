@@ -54,26 +54,29 @@ public sealed class DeactivateHandler(TextWriter output)
 /// <summary><c>azpm init &lt;shell&gt;</c> — print the wrapper function to eval in a shell profile.</summary>
 public sealed class InitHandler(TextWriter output, TextWriter error)
 {
-    public int Run(string shellName, bool auto)
+    public int Run(string shellName, bool auto, bool fullAuto = false)
     {
         var kind = Shells.Parse(shellName);
         var exe = Environment.ProcessPath
             ?? throw new AzpmException(ExitCode.UsageError, "cannot determine the azpm executable path");
 
-        output.Write(ShellIntegration.InitHeader(kind, auto));
+        var wantAuto = auto || fullAuto;
+
+        output.Write(ShellIntegration.InitHeader(kind, wantAuto, fullAuto));
         output.Write(ShellIntegration.InitScript(kind, exe));
-        if (auto)
-            output.Write(ShellIntegration.AutoHookScript(kind, exe));
+        if (wantAuto)
+            output.Write(ShellIntegration.AutoHookScript(kind, exe, trustAll: fullAuto));
 
         // Printed straight to a terminal (not piped into eval) → the user probably expected it to
         // "just work". Tell them what to do with it.
         if (!Console.IsOutputRedirected)
         {
+            var flag = fullAuto ? " --fullauto" : auto ? " --auto" : "";
             error.WriteLine();
             error.WriteLine($"The text above is a {ShellIntegration.ShellName(kind)} snippet — it does nothing on its own.");
             error.WriteLine($"Add this one line to {ShellIntegration.ProfileFile(kind)} and open a new shell:");
-            error.WriteLine($"    {ShellIntegration.SetupLine(kind, auto)}");
-            error.WriteLine($"(wrong shell? run:  azpm init <bash|zsh|fish|powershell>{(auto ? " --auto" : "")})");
+            error.WriteLine($"    {ShellIntegration.SetupLine(kind, auto, fullAuto)}");
+            error.WriteLine($"(wrong shell? run:  azpm init <bash|zsh|fish|powershell>{flag})");
         }
         return ExitCode.Ok;
     }

@@ -77,4 +77,5 @@ public sealed class AzureUser
 [JsonSerializable(typeof(ProfileMeta))]
 [JsonSerializable(typeof(AzureProfileFile))]
 [JsonSerializable(typeof(ServicePrincipal))]
+[JsonSerializable(typeof(Dictionary<string, string>))]
 internal sealed partial class AzpmJson : JsonSerializerContext;

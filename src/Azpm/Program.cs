@@ -221,27 +221,32 @@ root.Subcommands.Add(deactCmd);
 
 // --- init ---------------------------------------------------------
 var initShell = new Argument<string>("shell") { Description = "pwsh | powershell | bash | zsh | fish" };
-var initAuto = new Option<bool>("--auto") { Description = "Also add a hook that follows .azpm files on cd" };
+var initAuto = new Option<bool>("--auto") { Description = "Also follow .azpm files on cd (only ones you've run 'azpm local allow' on)" };
+var initFullAuto = new Option<bool>("--fullauto") { Description = "Like --auto but with no trust check — follows any .azpm, including from cloned repos" };
 var initCmd = new Command("init",
     "Print the shell setup line for 'azpm use' / 'deactivate' - add it to your shell profile once")
-    { initShell, initAuto };
-initCmd.SetAction(r => Guard(() => new InitHandler(Console.Out, Console.Error).Run(r.GetValue(initShell)!, r.GetValue(initAuto))));
+    { initShell, initAuto, initFullAuto };
+initCmd.SetAction(r => Guard(() => new InitHandler(Console.Out, Console.Error).Run(
+    r.GetValue(initShell)!, r.GetValue(initAuto), r.GetValue(initFullAuto))));
 root.Subcommands.Add(initCmd);
 
 // --- local -------------------------------------------------------
 var localName = new Argument<string?>("name") { Description = "Profile to pin to this directory", Arity = ArgumentArity.ZeroOrOne };
 var localResolve = new Option<bool>("--resolve") { Description = "Print the resolved profile for the cwd (used by 'azpm init --auto')" };
-var localUnset = new Option<bool>("--unset") { Description = "Remove this directory's .azpm file" };
+var localTrustAll = new Option<bool>("--trust-all") { Description = "With --resolve: skip the trust check (used by 'azpm init --fullauto')" };
+var localAllow = new Option<bool>("--allow") { Description = "Trust this directory's .azpm so 'azpm init --auto' will follow it" };
+var localUnset = new Option<bool>("--unset") { Description = "Remove this directory's .azpm file (and its trust entry)" };
 var localCmd = new Command("local",
-    "Pin a profile to this directory tree via a .azpm file (bare: show; --unset: remove)")
+    "Pin a profile to this directory tree via a .azpm file (bare: show; --allow: trust; --unset: remove)")
 {
-    localName, localResolve, localUnset,
+    localName, localResolve, localTrustAll, localAllow, localUnset,
 };
 localCmd.SetAction(r => Guard(() =>
 {
     var h = new LocalHandler(Store(r), Console.Out, Console.Error);
     var n = r.GetValue(localName);
-    if (r.GetValue(localResolve)) return h.Resolve();
+    if (r.GetValue(localResolve)) return h.Resolve(r.GetValue(localTrustAll));
+    if (r.GetValue(localAllow)) return h.Allow();
     if (r.GetValue(localUnset)) return h.Unset();
     return n is null ? h.Show() : h.Set(n);
 }));

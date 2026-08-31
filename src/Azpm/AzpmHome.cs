@@ -10,6 +10,10 @@ public sealed class AzpmHome(string root)
     public string Root { get; } = root;
 
     public string ProfilesDir => Path.Combine(Root, "profiles");
+
+    /// <summary>Trusted <c>.azpm</c> files for <c>init --auto</c> (path → content hash).</summary>
+    public string TrustPath => Path.Combine(Root, "trust.json");
+
     public string ProfileDir(string name) => Path.Combine(ProfilesDir, name);
     public string ConfigDir(string name) => Path.Combine(ProfilesDir, name, "config");
     public string MetaPath(string name) => Path.Combine(ProfilesDir, name, "meta.json");
