@@ -223,7 +223,7 @@ secret storage are on the roadmap ([PLAN.md](PLAN.md)).
 ## Security
 
 Trust boundaries, credential storage, and the MCP server's guarantees are documented in
-[SECURITY.md](SECURITY.md). Report vulnerabilities to redacted@example.invalid.
+[SECURITY.md](SECURITY.md), which also explains how to report a vulnerability privately.
 
 ## License
 

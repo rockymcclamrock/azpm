@@ -48,6 +48,18 @@ Current: **`v0.2.2-pre`**, 21 commands, 121 tests, CI green on win/mac/linux.
 | 17 | SP secret on argv + false Windows-ACL claim | ⏳ comment/docs fixed; argv + explicit ACL **deferred** (waiting on #9) |
 | 18 | SECURITY.md / threat model | ✅ `SECURITY.md` |
 
+## Before making the repo public
+
+- [ ] Enable **private vulnerability reporting** (Settings → Advanced Security) — not available
+      while private; `SECURITY.md` already points at it.
+- [ ] Review open issues for any **unfixed** weakness described with a working repro (#17 is the
+      only security one still open — its argv exposure is a generic, documented CLI class, low
+      risk, but trim the detail or move it to a draft advisory if uncomfortable).
+- [ ] Consider converting future security reports to **GitHub Security Advisories** (private
+      draft → published, optional CVE) instead of plain issues.
+- [ ] `git log` and closed-issue comments already contain `redacted@example.invalid` (commit author) and the
+      full fix narratives — fine post-fix, but be aware they become visible.
+
 ## Now / next
 
 - [ ] **Dogfood** on the real dev/prod tenants; log friction to `FEEDBACK.md`.

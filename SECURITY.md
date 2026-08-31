@@ -5,8 +5,17 @@ explicit about what it does and does not protect.
 
 ## Reporting a vulnerability
 
-Email **redacted@example.invalid** with details and a repro. Please don't open a public issue
-for anything exploitable. Expect an acknowledgement within a few days.
+Use GitHub's **private vulnerability reporting**: the repository's **Security**
+tab → **Report a vulnerability**. Include a description and, if you have one, a
+proof of concept. Please don't open a regular issue or PR for anything
+exploitable — that discloses it publicly before there's a fix.
+
+<!-- maintainer: enable private vulnerability reporting (Settings → Advanced
+Security) when this repo goes public; it is not available while the repo is
+private. Until then, collaborators should contact the maintainer through GitHub
+rather than filing an issue. -->
+
+Expect an acknowledgement within a few days.
 
 ## Trust boundaries
 
