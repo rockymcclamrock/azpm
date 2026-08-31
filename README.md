@@ -32,6 +32,7 @@ Azure CLI still owns its own tokens.
 
 | I want to… | Command | Setup needed |
 |---|---|---|
+| See my profiles and jump into one | `azpm` (no arguments) | none |
 | Run **one** command as a profile | `azpm exec prod -- az group list` | none |
 | Work as a profile for a **while** (a session) | `azpm shell prod` → … → `exit` | none |
 | Switch **this shell** to a profile, no subshell | `azpm use prod` | one-time `azpm init` (see below) |

@@ -236,4 +236,24 @@ portalCmd.SetAction(r => Guard(() =>
 }));
 root.Subcommands.Add(portalCmd);
 
+// --- bare `azpm` -------------------------------------------------
+root.SetAction(r => Guard(() =>
+{
+    var store = Store(r);
+
+    // Piped / no terminal: just show the profiles and point at --help.
+    if (Console.IsInputRedirected || Console.IsOutputRedirected)
+    {
+        new LsHandler(store, Console.Out, AzCli.Locate).Run(json: false);
+        Console.Error.WriteLine("run 'azpm --help' for commands");
+        return ExitCode.Ok;
+    }
+
+    // Terminal attached: pick a profile, then drop into its shell.
+    var picked = new PickHandler(store, Console.In, Console.Out, Console.Error).Choose();
+    return picked is null
+        ? ExitCode.Ok
+        : new ShellHandler(store, Console.Out, Console.Error).Run(picked, null);
+}));
+
 return root.Parse(args).Invoke();

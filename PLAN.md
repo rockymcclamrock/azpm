@@ -47,7 +47,8 @@ Current: **`v0.2.2-pre`**, 21 commands, 121 tests, CI green on win/mac/linux.
 
 ## Later
 
-- **TUI picker** — `azpm` with no args → interactive profile list → `use`.
+- ~~TUI picker~~ ✅ `azpm` (no args) → numbered profile list → opens that profile's shell.
+  (arrow-key/fuzzy version could come later)
 - **MCP server** — let an agent run `az` in the right profile context.
 - Firefox containers for `portal`; browser-profile name auto-discovery.
 - `--reset` semantics review; shell completion.

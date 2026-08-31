@@ -20,6 +20,12 @@ Each profile is a directory `~/.azpm/profiles/<name>/` holding `config/` (the Az
 
 ---
 
+## `azpm` (no arguments)
+
+In a terminal: a numbered list of your profiles — pick one and it opens that profile's shell
+(same as `azpm shell <name>`). Piped or non-interactive: prints the profile table and points at
+`--help`.
+
 ## `azpm add <name> [--tenant <id/domain>] [--device-code] [--description <text>]`
 
 Creates `profiles/<name>/` and runs `az login` into it. Fails if the profile exists (use
