@@ -68,6 +68,28 @@ public sealed class ProfileStoreTests
         Assert.Equal(ExitCode.ProfileNotFound, ex.ExitCode);
     }
 
+    [Theory]
+    [InlineData("../../evil")]
+    [InlineData("..\\..\\evil")]
+    [InlineData("a/b")]
+    public void Load_rejects_traversal_names_before_touching_disk(string name)
+    {
+        using var t = new TempHome();
+        var ex = Assert.Throws<AzpmException>(() => t.Store.Load(name));
+        Assert.Equal(ExitCode.UsageError, ex.ExitCode);
+    }
+
+    [Fact]
+    public void ListNames_ignores_directories_that_are_not_valid_profile_names()
+    {
+        using var t = new TempHome();
+        t.Store.Create("real", null, null);
+        Directory.CreateDirectory(Path.Combine(t.Home.ProfilesDir, ".junk"));
+        Directory.CreateDirectory(Path.Combine(t.Home.ProfilesDir, "has space"));
+
+        Assert.Equal(["real"], t.Store.ListNames());
+    }
+
     [Fact]
     public void Delete_removes_the_directory()
     {

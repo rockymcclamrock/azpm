@@ -40,6 +40,26 @@ public sealed class ImportTests
     }
 
     [Fact]
+    public void Import_copies_nested_dirs_whose_names_repeat_the_source_path()
+    {
+        using var t = new TempHome();
+        var root = Path.Combine(Path.GetTempPath(), "azpm-imp-" + Guid.NewGuid().ToString("N"));
+        var src = Path.Combine(root, "cfg");
+        Directory.CreateDirectory(Path.Combine(src, "cfg", "deep")); // "cfg" recurs below src
+        File.WriteAllText(Path.Combine(src, "azureProfile.json"),
+            "{\"subscriptions\":[{\"id\":\"s\",\"name\":\"S\",\"isDefault\":true,\"tenantId\":\"t\","
+            + "\"user\":{\"name\":\"u@x\",\"type\":\"user\"}}]}");
+        File.WriteAllText(Path.Combine(src, "cfg", "deep", "note.txt"), "hi");
+        try
+        {
+            new ImportHandler(t.Store, TextWriter.Null).Run("mine", src);
+            var p = t.Store.Load("mine");
+            Assert.True(File.Exists(Path.Combine(p.ConfigDir, "cfg", "deep", "note.txt")));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
     public void Import_rejects_a_dir_without_azureProfile()
     {
         using var t = new TempHome();

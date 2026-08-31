@@ -212,6 +212,31 @@ public sealed class PortalTests
     public void Browsers_Parse_maps_names(string name, BrowserKind expected) =>
         Assert.Equal(expected, Browsers.Parse(name));
 
+    [Theory]
+    [InlineData("Default", true)]
+    [InlineData("Profile 3", true)]
+    [InlineData("g5-prod", true)]
+    [InlineData("../../x", false)]
+    [InlineData("a/b", false)]
+    [InlineData("a\\b", false)]
+    [InlineData("has..dots", false)]
+    [InlineData(" leading", false)]
+    public void Browsers_IsSafeProfileName(string value, bool ok) =>
+        Assert.Equal(ok, Browsers.IsSafeProfileName(value));
+
+    [Fact]
+    public void Portal_rejects_a_browser_profile_with_path_separators()
+    {
+        using var t = new TempHome();
+        t.Store.Create("prod", null, null);
+        t.WriteAzureProfile("prod", "u@p", "p.example.com", "Sub");
+
+        var ex = Assert.Throws<AzpmException>(() =>
+            new PortalHandler(t.Store, new FakeUrlOpener(), TextWriter.Null, TextWriter.Null, new FakeBrowserProfiles())
+                .Run("prod", null, "brave", "../../evil"));
+        Assert.Equal(ExitCode.UsageError, ex.ExitCode);
+    }
+
     [Fact]
     public void Browsers_Parse_rejects_unknown() =>
         Assert.Throws<AzpmException>(() => Browsers.Parse("safari"));

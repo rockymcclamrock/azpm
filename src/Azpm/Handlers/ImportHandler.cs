@@ -44,19 +44,40 @@ public sealed class ImportHandler(ProfileStore store, TextWriter output)
     private static void CopyDirectory(string src, string dest)
     {
         Directory.CreateDirectory(dest);
+
         foreach (var dir in Directory.EnumerateDirectories(src, "*", SearchOption.AllDirectories))
-            Directory.CreateDirectory(dir.Replace(src, dest));
+        {
+            if (IsReparsePoint(dir))
+                continue; // don't follow symlinked directories out of the tree
+            Directory.CreateDirectory(Path.Combine(dest, Path.GetRelativePath(src, dir)));
+        }
 
         foreach (var file in Directory.EnumerateFiles(src, "*", SearchOption.AllDirectories))
         {
+            if (IsReparsePoint(file))
+                continue;
+            var target = Path.Combine(dest, Path.GetRelativePath(src, file));
             try
             {
-                File.Copy(file, file.Replace(src, dest), overwrite: true);
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Copy(file, target, overwrite: true);
             }
             catch (IOException)
             {
                 // Skip files az is holding open (telemetry.log, logs/*) — they're just caches.
             }
+        }
+    }
+
+    private static bool IsReparsePoint(string path)
+    {
+        try
+        {
+            return File.GetAttributes(path).HasFlag(FileAttributes.ReparsePoint);
+        }
+        catch (IOException)
+        {
+            return false;
         }
     }
 }

@@ -78,6 +78,10 @@ public sealed class PortalHandler(
 
     public int Run(string name, string? path, string? browser, string? browserProfile)
     {
+        if (browserProfile is not null && !Browsers.IsSafeProfileName(browserProfile))
+            throw new AzpmException(ExitCode.UsageError,
+                "--browser-profile must not contain path separators, '..', or control characters");
+
         var profile = store.Load(name);
 
         if (browser is not null || browserProfile is not null)

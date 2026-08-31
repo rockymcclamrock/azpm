@@ -15,6 +15,7 @@ public sealed class ProfileStore(AzpmHome home)
         return Directory.EnumerateDirectories(Home.ProfilesDir)
             .Select(Path.GetFileName)
             .OfType<string>()
+            .Where(ProfileName.IsValid) // ignore stray / hand-made directories
             .OrderBy(n => n, StringComparer.OrdinalIgnoreCase);
     }
 
@@ -22,6 +23,7 @@ public sealed class ProfileStore(AzpmHome home)
 
     public Profile Load(string name)
     {
+        ProfileName.Validate(name); // reject traversal / junk before it touches the filesystem
         if (!Exists(name))
             throw new AzpmException(ExitCode.ProfileNotFound, $"profile '{name}' not found");
 
@@ -99,7 +101,11 @@ public sealed class ProfileStore(AzpmHome home)
     public ServicePrincipal? ReadServicePrincipal(string name) =>
         ReadJson(SpPath(name), AzpmJson.Default.ServicePrincipal);
 
-    /// <summary>Writes <c>sp.json</c> owner-only (0600 on POSIX; Windows inherits the ~/.azpm ACL).</summary>
+    /// <summary>
+    /// Writes <c>sp.json</c>. 0600 on POSIX. On Windows azpm sets no explicit ACL — the file
+    /// inherits <c>~/.azpm</c>'s (current user + Administrators/SYSTEM); see issue #17. Plaintext
+    /// pending the OS keychain (#9).
+    /// </summary>
     public void WriteServicePrincipal(string name, ServicePrincipal sp)
     {
         var path = SpPath(name);

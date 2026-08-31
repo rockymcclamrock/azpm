@@ -84,6 +84,20 @@ public sealed class LocalTests : IDisposable
     }
 
     [Fact]
+    public void Resolve_ignores_a_dotazpm_with_a_traversal_name()
+    {
+        using var t = new TempHome();
+        Directory.SetCurrentDirectory(_work);
+        File.WriteAllText(Path.Combine(_work, ".azpm"), "../../../etc\n");
+
+        var errw = new StringWriter();
+        var code = new LocalHandler(t.Store, new StringWriter(), errw).Resolve();
+
+        Assert.Equal(ExitCode.UsageError, code);
+        Assert.Contains("not a valid profile name", errw.ToString());
+    }
+
+    [Fact]
     public void Set_rejects_an_unknown_profile()
     {
         using var t = new TempHome();

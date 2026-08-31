@@ -9,6 +9,11 @@ public sealed class LocalHandler(ProfileStore store, TextWriter output, TextWrit
         var found = LocalFile.Find(Directory.GetCurrentDirectory());
         if (found is null)
             return ExitCode.UsageError;
+        if (!ProfileName.IsValid(found.Profile))
+        {
+            error.WriteLine($"azpm: ignoring {found.FilePath} — '{found.Profile}' is not a valid profile name");
+            return ExitCode.UsageError;
+        }
         if (!store.Exists(found.Profile))
         {
             error.WriteLine($"azpm: {found.FilePath} names unknown profile '{found.Profile}'");
@@ -25,6 +30,11 @@ public sealed class LocalHandler(ProfileStore store, TextWriter output, TextWrit
         {
             output.WriteLine($"no {LocalFile.Name} for this directory");
             return ExitCode.Ok;
+        }
+        if (!ProfileName.IsValid(found.Profile))
+        {
+            output.WriteLine($"{found.FilePath} contains an invalid profile name ('{found.Profile}') — ignored");
+            return ExitCode.UsageError;
         }
         var ok = store.Exists(found.Profile);
         output.WriteLine($"{found.Profile}  (from {found.FilePath}){(ok ? "" : "  [profile missing!]")}");

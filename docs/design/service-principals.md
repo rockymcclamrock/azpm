@@ -22,12 +22,17 @@ stdin (keeps it out of shell history / the arg list).
   sp.json        # { clientId, tenantId, auth: "secret"|"certificate", secret? , certificatePath? }
 ```
 
-`sp.json` is written `chmod 600` on POSIX. On Windows it inherits the ACL of `%USERPROFILE%\.azpm`
-(current user only). This mirrors what `az` itself does with tokens in `config/`.
+`sp.json` is written `chmod 600` on POSIX. On Windows azpm does **not** set an explicit DACL —
+the file inherits whatever `%USERPROFILE%\.azpm` grants, which for a standard profile is the
+current user (and Administrators / SYSTEM). This is the same posture as `az`'s own token cache in
+`config/`, but it is weaker than the POSIX `0600` and should not be relied on as a security
+boundary.
 
 **This is deliberately not the OS keychain yet** — tracked in
-[#9](https://github.com/rockymcclamrock/azpm/issues/9). The secret is also briefly visible on the
-`az login` arg list; the keychain work will fix that too.
+[#9](https://github.com/rockymcclamrock/azpm/issues/9). Two interim gaps
+([#17](https://github.com/rockymcclamrock/azpm/issues/17)) remain until then: the secret is
+briefly visible on the `az login` argument list, and `sp.json` has no explicit Windows ACL. The
+keychain work supersedes both.
 
 ## Behaviour
 

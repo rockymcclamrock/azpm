@@ -124,16 +124,31 @@ public static class Browsers
     }
 
     /// <summary>
+    /// A <c>--browser-profile</c> value that is safe to use as an on-disk directory name: no path
+    /// separators, no <c>..</c>, no control characters. Chromium's own profile dirs
+    /// (<c>Default</c>, <c>Profile 3</c>) and any sensible display name pass.
+    /// </summary>
+    public static bool IsSafeProfileName(string s) =>
+        s.Length is > 0 and <= 128
+        && s.IndexOfAny(['/', '\\']) < 0
+        && !s.Contains("..")
+        && !s.Any(char.IsControl)
+        && s.Trim() == s;
+
+    /// <summary>
     /// Pre-seeds a not-yet-existing Chromium profile directory with a <c>Preferences</c> file that
     /// sets its display name, so it shows up in the browser as e.g. "g5-prod" rather than
     /// "Person 3". No-op if the directory already exists or the browser is unknown.
     /// </summary>
     public static void SeedChromiumProfile(BrowserKind kind, string dir, string displayName)
     {
-        if (!IsChromium(kind) || ChromiumUserDataDir(kind) is not { } userData)
+        if (!IsChromium(kind) || !IsSafeProfileName(dir) || ChromiumUserDataDir(kind) is not { } userData)
             return;
 
         var profileDir = Path.Combine(userData, dir);
+        // Defence in depth: refuse anything that escaped the User Data dir.
+        if (Path.GetRelativePath(userData, profileDir).StartsWith("..", StringComparison.Ordinal))
+            return;
         if (Directory.Exists(profileDir))
             return;
 

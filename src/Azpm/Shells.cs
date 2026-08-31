@@ -87,10 +87,12 @@ public static partial class Shells
                 temps.Add(dir);
                 var orig = Environment.GetEnvironmentVariable("ZDOTDIR");
                 orig = string.IsNullOrEmpty(orig) ? "$HOME" : $"\"{orig}\"";
-                File.WriteAllText(Path.Combine(dir, ".zshrc"), $"""
+                var zrc = Path.Combine(dir, ".zshrc");
+                File.WriteAllText(zrc, $"""
                     [ -f {orig}/.zshrc ] && source {orig}/.zshrc
                     PROMPT="{tag}$PROMPT"
                     """);
+                RestrictToOwner(zrc);
                 psi = new ProcessStartInfo("zsh") { Environment = { ["ZDOTDIR"] = dir } };
                 psi.ArgumentList.Add("-i");
                 break;
@@ -128,8 +130,16 @@ public static partial class Shells
     {
         var path = Path.Combine(Path.GetTempPath(), "azpm-" + Guid.NewGuid().ToString("N") + suffix);
         File.WriteAllText(path, content);
+        RestrictToOwner(path);
         temps.Add(path);
         return path;
+    }
+
+    /// <summary>Owner-only perms on POSIX (these land in a shared /tmp). No-op on Windows.</summary>
+    private static void RestrictToOwner(string path)
+    {
+        if (!OperatingSystem.IsWindows())
+            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
     }
 
     private static string? ParentProcessName()
