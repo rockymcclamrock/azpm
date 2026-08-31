@@ -101,6 +101,60 @@ public sealed class ServicePrincipalLoginTests
     }
 
     [Fact]
+    public void Login_keeps_the_secret_off_the_az_command_line()
+    {
+        using var t = new TempHome();
+        t.Store.Create("ci", null, null);
+        var az = new FakeAzRunner();
+
+        new LoginHandler(t.Store, az, TextWriter.Null)
+            .Run("ci", new InteractiveLogin(null, false), Secret(secret: "topsecret"), reset: false);
+
+        var args = az.Calls.Single().Args;
+        Assert.DoesNotContain("topsecret", args);
+        var pIndex = Array.IndexOf(args, "-p");
+        Assert.True(pIndex >= 0);
+        Assert.StartsWith("@", args[pIndex + 1]);           // az reads the secret from @file
+    }
+
+    [Fact]
+    public void Login_deletes_the_temp_secret_file_afterward()
+    {
+        using var t = new TempHome();
+        t.Store.Create("ci", null, null);
+
+        new LoginHandler(t.Store, new FakeAzRunner(), TextWriter.Null)
+            .Run("ci", new InteractiveLogin(null, false), Secret(), reset: false);
+
+        var cfg = t.Home.ConfigDir("ci");
+        Assert.Empty(Directory.Exists(cfg)
+            ? Directory.GetFiles(cfg, ".azpm-sp-*")
+            : []);
+    }
+
+    [Fact]
+    public void Login_with_certificate_uses_the_certificate_flag()
+    {
+        using var t = new TempHome();
+        t.Store.Create("ci", null, null);
+        var cert = Path.Combine(t.Home.Root, "sp.pem");
+        File.WriteAllText(cert, "-----BEGIN PRIVATE KEY-----");
+        t.Store.WriteServicePrincipal("ci", new ServicePrincipal
+        {
+            ClientId = "app", TenantId = "ten", Auth = "certificate", CertificatePath = cert,
+        });
+
+        var az = new FakeAzRunner();
+        new LoginHandler(t.Store, az, TextWriter.Null)
+            .Run("ci", new InteractiveLogin(null, false), null, reset: false);
+
+        var args = az.Calls.Single().Args;
+        Assert.Contains("--certificate", args);
+        Assert.Contains(cert, args);
+        Assert.DoesNotContain("-p", args);
+    }
+
+    [Fact]
     public void Login_with_new_secret_rotates_the_stored_value()
     {
         using var t = new TempHome();

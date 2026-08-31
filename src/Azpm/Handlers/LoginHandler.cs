@@ -26,10 +26,29 @@ public sealed class LoginHandler(ProfileStore store, IAzRunner az, TextWriter ou
             store.WriteServicePrincipal(name, sp);
         sp ??= store.ReadServicePrincipal(name);
 
-        var args = sp is not null ? ServicePrincipalArgs(sp) : InteractiveArgs(interactive);
-
         output.WriteLine($"Logging in to profile '{name}'{(sp is not null ? " (service principal)" : "")}...");
-        var code = az.Run(profile.ConfigDir, args);
+
+        int code;
+        if (sp is not null)
+        {
+            // Keep the client secret off the process command line — write it to an owner-only
+            // file inside the (already-protected) profile dir and hand `az` a `@path` reference.
+            var secretFile = sp.Auth == "certificate" ? null : WriteSecretFile(profile.ConfigDir, sp.Secret!);
+            try
+            {
+                code = az.Run(profile.ConfigDir, ServicePrincipalArgs(sp, secretFile));
+            }
+            finally
+            {
+                if (secretFile is not null)
+                    TryDelete(secretFile);
+            }
+        }
+        else
+        {
+            code = az.Run(profile.ConfigDir, InteractiveArgs(interactive));
+        }
+
         if (code != 0)
             throw new AzpmException(ExitCode.AzFailed, $"'az login' failed (exit {code})");
 
@@ -60,11 +79,29 @@ public sealed class LoginHandler(ProfileStore store, IAzRunner az, TextWriter ou
         return args;
     }
 
-    private static List<string> ServicePrincipalArgs(ServicePrincipal sp) =>
+    private static List<string> ServicePrincipalArgs(ServicePrincipal sp, string? secretFile) =>
     [
         "login", "--service-principal",
         "-u", sp.ClientId,
-        "-p", sp.Auth == "certificate" ? sp.CertificatePath! : sp.Secret!,
+        .. sp.Auth == "certificate"
+            ? new[] { "--certificate", sp.CertificatePath! }
+            : ["-p", "@" + secretFile!],
         "--tenant", sp.TenantId,
     ];
+
+    private static string WriteSecretFile(string configDir, string secret)
+    {
+        Directory.CreateDirectory(configDir);
+        var path = Path.Combine(configDir, ".azpm-sp-" + Guid.NewGuid().ToString("N"));
+        File.WriteAllText(path, secret);
+        if (!OperatingSystem.IsWindows())
+            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        return path;
+    }
+
+    private static void TryDelete(string path)
+    {
+        try { File.Delete(path); }
+        catch (IOException) { /* best effort — it's inside the profile dir, not /tmp */ }
+    }
 }

@@ -68,7 +68,7 @@ letting an agent read broadly.
 | Credential | Where | Protection |
 |---|---|---|
 | Interactive user tokens | `~/.azpm/profiles/<name>/config/` — the Azure CLI's own MSAL cache | DPAPI-encrypted on Windows; `0600` JSON on macOS/Linux. `az` owns this, not `azpm`. |
-| Service-principal secret | `~/.azpm/profiles/<name>/sp.json` | **Windows:** DPAPI-encrypted (`secretProtected`, per-user, per-machine). **POSIX:** plaintext, `0600`. Tracked: [#9](https://github.com/rockymcclamrock/azpm/issues/9) (OS keychain, incl. POSIX), [#17](https://github.com/rockymcclamrock/azpm/issues/17) (the secret is still briefly on the `az login` argv during auth). |
+| Service-principal secret | `~/.azpm/profiles/<name>/sp.json` | **Windows:** DPAPI-encrypted (`secretProtected`, per-user, per-machine). **POSIX:** plaintext, `0600`. During `azpm login` it's passed to `az` via a short-lived `-p @file` inside the profile dir, not on the argv. Tracked: [#9](https://github.com/rockymcclamrock/azpm/issues/9) (OS keychain for the POSIX side). |
 | `.azpm` trust list | `~/.azpm/trust.json` | Not sensitive (paths + hashes). Integrity matters, not secrecy. |
 
 ## What `azpm` never does

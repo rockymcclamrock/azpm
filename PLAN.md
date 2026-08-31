@@ -45,7 +45,7 @@ Current: **`v0.2.2-pre`**, 21 commands, 121 tests, CI green on win/mac/linux.
 | 13b | `.azpm` trust model | ✅ `~/.azpm/trust.json` gate + `azpm local --allow` + `init --fullauto` opt-out |
 | 14 | `Load` name / `--browser-profile` / temp perms | ✅ all three |
 | 16 | `import` `string.Replace` path bug | ✅ `Path.GetRelativePath` + skip reparse points |
-| 17 | SP secret on argv + false Windows-ACL claim | ⏳ docs fixed; **SP secret now DPAPI-encrypted at rest on Windows** (down-payment on #9); argv exposure still open — `az` no longer takes `-p @file` for secrets, needs a stdin-to-prompt spike |
+| 17 | SP secret on argv + false Windows-ACL claim | ✅ DPAPI-encrypted at rest on Windows; secret passed to `az` via short-lived `-p @file` (not argv); `--certificate` flag for cert auth; false ACL claim removed |
 | 18 | SECURITY.md / threat model | ✅ `SECURITY.md` |
 | 19 | per-profile MCP opt-out | ✅ `azpm mcp hide/show` |
 
@@ -53,9 +53,8 @@ Current: **`v0.2.2-pre`**, 21 commands, 121 tests, CI green on win/mac/linux.
 
 - [ ] Enable **private vulnerability reporting** (Settings → Advanced Security) — not available
       while private; `SECURITY.md` already points at it.
-- [ ] Review open issues for any **unfixed** weakness described with a working repro (#17 is the
-      only security one still open — its argv exposure is a generic, documented CLI class, low
-      risk, but trim the detail or move it to a draft advisory if uncomfortable).
+- [ ] Review open issues for any **unfixed** weakness described with a working repro. (As of the
+      #11–#19 sweep none of the security issues are open; re-check before flipping public.)
 - [ ] Consider converting future security reports to **GitHub Security Advisories** (private
       draft → published, optional CVE) instead of plain issues.
 - [ ] `git log` and closed-issue comments already contain `redacted@example.invalid` (commit author) and the
@@ -64,12 +63,9 @@ Current: **`v0.2.2-pre`**, 21 commands, 121 tests, CI green on win/mac/linux.
 ## Now / next
 
 - [ ] **Dogfood** on the real dev/prod tenants; log friction to `FEEDBACK.md`.
-- [ ] [#17](https://github.com/rockymcclamrock/azpm/issues/17) — SP secret off the `az login`
-      argv. `az` dropped `-p @file` for secrets; the remaining path is piping the secret to
-      `az login --service-principal`'s stdin prompt (no `-p`). Needs a spike to confirm `az`
-      consumes it non-interactively. (At-rest encryption done on Windows via DPAPI.)
 - [ ] [#9](https://github.com/rockymcclamrock/azpm/issues/9) — SP secrets → OS keychain.
-      Windows DPAPI landed as an interim; the remaining work is macOS Keychain / libsecret.
+      Windows DPAPI landed as an interim (#17); the remaining work is macOS Keychain / libsecret
+      on the POSIX side.
 - [ ] [#7](https://github.com/rockymcclamrock/azpm/issues/7) — run `shell` + `init` on a real
       Linux/macOS box (bash/zsh/fish paths are built + unit-tested, never executed). Now also
       covers the trust-gate hook branches (exit-5 nudge).

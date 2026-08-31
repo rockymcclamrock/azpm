@@ -30,10 +30,14 @@ stdin (keeps it out of shell history / the arg list).
 - A pre-DPAPI `sp.json` with a plaintext `secret` still reads on Windows; it's re-encrypted on
   the next `azpm login` / rotate.
 
+During `azpm login` the secret is written to an owner-only file inside the profile's `config/`
+dir and handed to `az` as `-p @<file>` (deleted immediately after) — so it is **not** on the
+`az` process command line ([#17](https://github.com/rockymcclamrock/azpm/issues/17)). Certificate
+auth uses `az login --certificate <path>`.
+
 **Still not the OS keychain** — tracked in
-[#9](https://github.com/rockymcclamrock/azpm/issues/9); DPAPI is the Windows down-payment on it.
-One interim gap remains ([#17](https://github.com/rockymcclamrock/azpm/issues/17)): the secret is
-briefly on the `az login` argument list during authentication.
+[#9](https://github.com/rockymcclamrock/azpm/issues/9); DPAPI is the Windows down-payment on it,
+and the POSIX side stays plaintext `0600` until Keychain / libsecret support lands.
 
 ## Behaviour
 
