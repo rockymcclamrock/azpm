@@ -61,8 +61,9 @@ public sealed class AzCli : IAzRunner
             ?? throw new AzpmException(ExitCode.AzFailed, "failed to start 'az'");
 
         var stdout = new System.Text.StringBuilder();
+        var stderr = new System.Text.StringBuilder();
         process.OutputDataReceived += (_, e) => { if (e.Data is not null) stdout.AppendLine(e.Data); };
-        process.ErrorDataReceived += (_, _) => { };
+        process.ErrorDataReceived += (_, e) => { if (e.Data is not null) stderr.AppendLine(e.Data); };
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
         process.StandardInput.Close();
@@ -70,10 +71,10 @@ public sealed class AzCli : IAzRunner
         if (!process.WaitForExit((int)timeout.TotalMilliseconds))
         {
             try { process.Kill(entireProcessTree: true); } catch { /* already gone */ }
-            return new AzResult(-1, "", TimedOut: true);
+            return new AzResult(-1, "", "", TimedOut: true);
         }
         process.WaitForExit(); // let the async readers drain
-        return new AzResult(process.ExitCode, stdout.ToString(), TimedOut: false);
+        return new AzResult(process.ExitCode, stdout.ToString(), stderr.ToString(), TimedOut: false);
     }
 
     private ProcessStartInfo BaseStartInfo(string configDir, IReadOnlyList<string> args)

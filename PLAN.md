@@ -49,7 +49,9 @@ Current: **`v0.2.2-pre`**, 21 commands, 121 tests, CI green on win/mac/linux.
 
 - ~~TUI picker~~ ✅ `azpm` (no args) → numbered profile list → opens that profile's shell.
   (arrow-key/fuzzy version could come later)
-- **MCP server** — let an agent run `az` in the right profile context.
+- ~~MCP server~~ ✅ `azpm mcp` — read-only, hand-rolled JSON-RPC/stdio, no deps.
+  `azpm_list_profiles` + `azpm_az` (read-only classifier). `docs/mcp.md`.
+  (full-access / opt-in-profiles modes deferred — user chose read-only)
 - Firefox containers for `portal`; browser-profile name auto-discovery.
 - `--reset` semantics review; shell completion.
 

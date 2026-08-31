@@ -11,7 +11,7 @@ public sealed class FakeAzRunner : IAzRunner
     public List<(string ConfigDir, string[] Args)> Calls { get; } = [];
 
     public int ExitCode { get; set; }
-    public AzResult CaptureResult { get; set; } = new(0, "", false);
+    public AzResult CaptureResult { get; set; } = new(0, "", "", false);
 
     public AzResult Capture(string configDir, IReadOnlyList<string> args, TimeSpan timeout)
     {

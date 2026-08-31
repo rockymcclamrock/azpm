@@ -20,6 +20,12 @@ Each profile is a directory `~/.azpm/profiles/<name>/` holding `config/` (the Az
 
 ---
 
+## `azpm mcp`
+
+Runs a read-only [MCP](https://modelcontextprotocol.io) server on stdio: an agent gets
+`azpm_list_profiles` and `azpm_az` (read-only `az` in a named profile). See
+[docs/mcp.md](mcp.md).
+
 ## `azpm` (no arguments)
 
 In a terminal: a numbered list of your profiles — pick one and it opens that profile's shell

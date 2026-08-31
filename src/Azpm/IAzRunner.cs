@@ -1,6 +1,6 @@
 namespace Azpm;
 
-public readonly record struct AzResult(int ExitCode, string StdOut, bool TimedOut);
+public readonly record struct AzResult(int ExitCode, string StdOut, string StdErr, bool TimedOut);
 
 /// <summary>Runs the Azure CLI with <c>AZURE_CONFIG_DIR</c> pointed at a profile.</summary>
 public interface IAzRunner

@@ -236,6 +236,15 @@ portalCmd.SetAction(r => Guard(() =>
 }));
 root.Subcommands.Add(portalCmd);
 
+// --- mcp --------------------------------------------------------
+var mcpCmd = new Command("mcp", "Run a read-only MCP server (stdio) exposing profiles + read-only az");
+mcpCmd.SetAction(r => Guard(() =>
+{
+    var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
+    return new McpHandler(Store(r), AzCli.Locate(), version).Run(Console.In, Console.Out);
+}));
+root.Subcommands.Add(mcpCmd);
+
 // --- bare `azpm` -------------------------------------------------
 root.SetAction(r => Guard(() =>
 {

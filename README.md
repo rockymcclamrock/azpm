@@ -181,6 +181,10 @@ azpm prompt --format ' [az:{}]'     # active profile, for your shell prompt (doc
 `AZURE_SUBSCRIPTION_ID` from the active subscription, so Terraform and the Azure SDKs pick up
 the right one.
 
+**MCP:** `azpm mcp` runs a **read-only** MCP server (stdio) so an agent can inspect your Azure
+through your profiles without switching your context or being able to change anything —
+[docs/mcp.md](docs/mcp.md).
+
 ---
 
 ## Install

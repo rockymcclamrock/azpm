@@ -87,7 +87,7 @@ public sealed class LsHandlerTests
 
         var az = new FakeAzRunner();
         // one runner instance, so make it fail: exercises the "needs login" branch
-        az.CaptureResult = new AzResult(1, "", false);
+        az.CaptureResult = new AzResult(1, "", "", false);
 
         var sw = new StringWriter();
         new LsHandler(t.Store, sw, () => az).Run(json: false, check: true);
