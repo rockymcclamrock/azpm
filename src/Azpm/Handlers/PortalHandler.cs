@@ -153,17 +153,15 @@ public sealed class PortalHandler(
 
     public static string BuildUrl(Profile profile, string? path)
     {
-        var tenant = profile.ActiveSubscription?.TenantId
-            ?? profile.ActiveSubscription?.TenantDefaultDomain
+        // The portal takes the tenant in the URL *fragment* (`#@<tenant>`); its domain form is
+        // more reliable than the GUID. A `?login_hint=` query string ahead of the fragment is not
+        // portal-supported and has been seen to break the SPA's tenant routing — leave it off and
+        // let the browser profile's signed-in account do the selecting.
+        var tenant = profile.ActiveSubscription?.TenantDefaultDomain
+            ?? profile.ActiveSubscription?.TenantId
             ?? profile.Meta?.TenantHint;
-        var account = profile.ActiveSubscription?.User?.Name;
 
         var url = "https://portal.azure.com/";
-
-        // login_hint nudges the sign-in page toward the right account when the browser profile
-        // has several signed in. Best-effort — the surest fix is one account per browser profile.
-        if (!string.IsNullOrEmpty(account))
-            url += $"?login_hint={Uri.EscapeDataString(account)}";
 
         if (!string.IsNullOrEmpty(tenant))
             url += $"#@{tenant}";

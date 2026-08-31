@@ -160,8 +160,13 @@ takes the directory (`Profile 4`) **or** the name shown in the browser (`g5-prod
 `azpm portal --browsers` lists both.
 
 Best results: **one browser profile per azpm profile, one account each.** Point `--browser-profile`
-at a name that doesn't exist yet and Chromium creates a fresh one — sign in once, done. A
-leftover account picker means that browser profile has more than one account in it.
+at a name that doesn't exist yet and Chromium creates a fresh one — **sign it into the right
+account once** (a new profile has no session). A leftover account picker means that browser
+profile has more than one account in it.
+
+On a **corporate / group-policy-managed browser**, new profiles may be blocked or fight device
+SSO — `azpm portal` warns when it can detect this. Then: make the profile in the browser UI
+yourself, or use a non-managed browser (often Brave), or `--browser default`.
 
 ---
 

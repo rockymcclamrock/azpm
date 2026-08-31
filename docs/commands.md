@@ -141,17 +141,22 @@ azpm portal prod /resource/subscriptions                     # deep-link
 - `--browser-profile`: for Chromium browsers, either the profile **directory** (`Profile 4`) or
   the **name you see in the browser** (`g5-prod`) — `azpm portal --browsers` shows both.
   Firefox takes the profile name from `about:profiles`.
-- **A name that doesn't exist yet:** azpm creates the Chromium profile directory and pre-names
-  it (via a `Preferences` file) so it shows up as e.g. `g5-prod` in the browser's profile menu,
-  not "Person 3". The browser opens it; sign in once and you're set. This is the recommended
-  pattern: one browser profile per azpm profile, one account each. (Firefox: opens its profile
-  manager instead — create the profile there.)
+- **A name that doesn't exist yet:** azpm creates the Chromium profile directory, pre-names it
+  (via a `Preferences` file) so it shows as e.g. `g5-prod` in the browser's profile menu, and
+  asks the browser to open it. **Sign that profile into the right account once** — a brand-new
+  profile has no session, so the first visit goes through a full login. One browser profile per
+  azpm profile, one account each. (Firefox: opens its profile manager instead.)
+- **Managed / corporate browser:** if the browser is locked down by group policy it may refuse
+  the new profile (or fight it with device SSO), and the portal opens in your current profile
+  instead. `azpm portal` warns when it can detect this. Workarounds: create the profile in the
+  browser UI yourself and sign it in, then `azpm portal <name> --browser-profile "<its name>"`;
+  or point `--browser` at a browser that *isn't* managed (often Brave); or `--browser default`.
 - With no binding, `azpm portal` uses your OS default browser (no isolation) and prints how to
   bind one.
 
-**Still seeing an account picker?** The URL pins the tenant and passes a `login_hint`, but a
-browser profile with **more than one account signed in** still shows it. One account per browser
-profile is what removes it.
+The portal URL is just `https://portal.azure.com/#@<tenant>` — the tenant is pinned in the URL,
+the **account comes from whichever browser profile you're in**. A profile with more than one
+account signed in will still show a picker; one account per profile removes it.
 
 ## `azpm use <name> [--shell <s>]`  +  `azpm init <shell>`
 

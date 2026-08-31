@@ -74,7 +74,7 @@ public sealed class PortalTests
     }
 
     [Fact]
-    public void BuildUrl_adds_a_login_hint_for_the_known_account()
+    public void BuildUrl_does_not_add_a_login_hint_query_string()
     {
         var p = new Profile
         {
@@ -89,8 +89,30 @@ public sealed class PortalTests
                 }],
             },
         };
-        Assert.Equal("https://portal.azure.com/?login_hint=me%40contoso.com#@t",
-            PortalHandler.BuildUrl(p, null));
+        var url = PortalHandler.BuildUrl(p, null);
+        Assert.DoesNotContain("login_hint", url);
+        Assert.DoesNotContain("?", url);
+        Assert.Equal("https://portal.azure.com/#@t", url);
+    }
+
+    [Fact]
+    public void BuildUrl_prefers_the_tenant_domain_over_the_guid()
+    {
+        var p = new Profile
+        {
+            Name = "prod",
+            ConfigDir = "x",
+            AzureProfile = new AzureProfileFile
+            {
+                Subscriptions = [new AzureSubscription
+                {
+                    IsDefault = true,
+                    TenantId = "00000000-1111-2222-3333-444444444444",
+                    TenantDefaultDomain = "contoso.example.com",
+                }],
+            },
+        };
+        Assert.Equal("https://portal.azure.com/#@contoso.example.com", PortalHandler.BuildUrl(p, null));
     }
 
     [Fact]
