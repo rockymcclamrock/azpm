@@ -1,6 +1,7 @@
 # azpm — Azure Profile Manager
 
-**Status:** draft spec, v0.1 (pre-implementation)
+**Status:** design overview — problem, decisions, and scope. Behaviour that has shipped is
+documented in [docs/commands.md](docs/commands.md); this is the "why".
 **Name:** `azpm` (azure profile manager)
 **One-liner:** `aws-vault` / `granted` for Azure — named, isolated login profiles you switch between instantly, no re-login.
 

@@ -1,7 +1,9 @@
 # azpm — Azure Profile Manager
 
-> **Status: early development** (`v0.2.3-pre`) — see [SPEC.md](SPEC.md), [PLAN.md](PLAN.md),
-> full reference in [docs/commands.md](docs/commands.md).
+> **Status: pre-1.0**, actively developed — prebuilt binaries on [Releases][rel], design notes in
+> [SPEC.md](SPEC.md), full command reference in [docs/commands.md](docs/commands.md).
+>
+> [rel]: https://github.com/rockymcclamrock/azpm/releases
 
 `aws-vault` / `granted`, but for Azure. Named, isolated Azure CLI logins you switch between
 instantly — no re-login, no "which tenant am I in", no clobbering your other account.

@@ -1,9 +1,10 @@
 # azpm — Work Plan
 
 Companion to [SPEC.md](SPEC.md) and [docs/commands.md](docs/commands.md). Each change lands as a
-commit that builds green; work is tracked as GitHub issues.
+commit that builds green; live work is tracked as GitHub issues — this file is the durable
+record (settled decisions, shipped milestones, the security review).
 
-Current: **`v0.2.2-pre`**, 21 commands, 121 tests, CI green on win/mac/linux.
+Current: **`v0.4.0-pre`**, 23 commands, 237 tests, CI green on win/mac/linux.
 
 ---
 
