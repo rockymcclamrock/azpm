@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <InvariantGlobalization>true</InvariantGlobalization>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
-    <VersionPrefix>0.2.6</VersionPrefix>
+    <VersionPrefix>0.2.7</VersionPrefix>
     <VersionSuffix Condition="'$(VersionSuffix)' == ''">pre</VersionSuffix>
   </PropertyGroup>
 </Project>
