@@ -43,6 +43,20 @@ Firefox *containers* (needs the "Open URL in Container" extension) — deferred.
 profile's active subscription (`azureProfile.json`); fall back to `tenantDefaultDomain`, then no
 pin.
 
+## Creating a new browser profile
+
+Point `--browser-profile` at a name that doesn't exist and `azpm` pre-seeds the profile
+directory (with a `Preferences` file carrying the display name) and launches Chromium with
+`--profile-directory=<name>`; Chromium then registers it and opens a window there. Verified
+against Edge + Chrome with the browser already running.
+
+**Managed browsers.** On a device where the browser is managed by group policy
+(`BrowserAddProfileEnabled=0` for Edge, `BrowserAddPersonEnabled=0` for Chrome, or other MDM
+restrictions), Chromium silently refuses the new profile and the URL opens in the currently
+active profile instead. `azpm portal` checks the known policy keys and warns up front when it
+can; if it can't tell, the fix is to create the profile through the browser UI first, then
+`azpm portal <name> --browser-profile "<its name>"`, or fall back to `--browser default`.
+
 ## Not doing yet
 
 - Auto-discovering browser-profile names (read Chrome/Edge `Local State`) — user names it for now

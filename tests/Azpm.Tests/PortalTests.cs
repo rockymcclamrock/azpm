@@ -156,6 +156,30 @@ public sealed class PortalTests
     }
 
     [Fact]
+    public void Portal_notes_that_it_is_asking_the_browser_to_create_a_new_profile()
+    {
+        using var t = new TempHome();
+        t.Store.Create("prod", null, null);
+        t.WriteAzureProfile("prod", "u@p", "p.example.com", "Sub");
+        t.Store.UpdateMeta("prod", m => m.Browser = new BrowserMapping { Kind = "brave", Profile = "acme-prod" });
+
+        var err = new StringWriter();
+        new PortalHandler(t.Store, new FakeUrlOpener(), TextWriter.Null, err, new FakeBrowserProfiles())
+            .Run("prod", null, null, null);
+
+        Assert.Contains("asking brave to create a new profile 'acme-prod'", err.ToString());
+        Assert.Contains("u@p", err.ToString());
+    }
+
+    [Fact]
+    public void ProfileCreationBlocked_is_false_for_non_chromium_and_does_not_throw()
+    {
+        Assert.False(Browsers.ProfileCreationBlocked(BrowserKind.Firefox));
+        Assert.False(Browsers.ProfileCreationBlocked(BrowserKind.Default));
+        _ = Browsers.ProfileCreationBlocked(BrowserKind.Edge); // must not throw on any platform
+    }
+
+    [Fact]
     public void Portal_does_not_seed_an_existing_profile()
     {
         using var t = new TempHome();

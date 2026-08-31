@@ -74,6 +74,44 @@ public static class Browsers
         Process.Start(psi);
     }
 
+    /// <summary>
+    /// True when Windows group policy disables adding browser profiles for this Chromium browser
+    /// (managed devices) — so a new <c>--profile-directory</c> won't be honoured.
+    /// </summary>
+    public static bool ProfileCreationBlocked(BrowserKind kind)
+    {
+        if (!OperatingSystem.IsWindows() || !IsChromium(kind))
+            return false;
+
+        var (policyKey, valueName) = kind switch
+        {
+            BrowserKind.Edge => (@"SOFTWARE\Policies\Microsoft\Edge", "BrowserAddProfileEnabled"),
+            BrowserKind.Chrome => (@"SOFTWARE\Policies\Google\Chrome", "BrowserAddPersonEnabled"),
+            BrowserKind.Brave => (@"SOFTWARE\Policies\BraveSoftware\Brave", "BrowserAddPersonEnabled"),
+            _ => ("", ""),
+        };
+        if (policyKey.Length == 0)
+            return false;
+
+        foreach (var hive in new[]
+                 {
+                     Microsoft.Win32.Registry.LocalMachine,
+                     Microsoft.Win32.Registry.CurrentUser,
+                 })
+        {
+            try
+            {
+                using var key = hive.OpenSubKey(policyKey);
+                if (key?.GetValue(valueName) is int v && v == 0)
+                    return true;
+            }
+            catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException)
+            {
+            }
+        }
+        return false;
+    }
+
     /// <summary>Reads a Chromium browser's profile list from <c>User Data\Local State</c>. Empty if unavailable.</summary>
     public static IReadOnlyList<BrowserProfile> ListProfiles(BrowserKind kind)
     {

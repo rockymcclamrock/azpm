@@ -112,8 +112,14 @@ public sealed class PortalHandler(
                 // New profile — name it after the binding so it reads as "g5-prod" in the browser.
                 _browsers.Seed(kind, launchDir, mapping.Profile);
                 error.WriteLine(
-                    $"note: creating a new {Browsers.Name(kind)} profile '{mapping.Profile}' — " +
+                    $"note: asking {Browsers.Name(kind)} to create a new profile '{mapping.Profile}' — " +
                     $"sign in with {account ?? "your account"} when its window opens.");
+                if (Browsers.ProfileCreationBlocked(kind))
+                    error.WriteLine(
+                        $"warning: {Browsers.Name(kind)} is managed by your organization and new profiles look " +
+                        $"restricted — the portal may open in your current profile instead. If so, create a " +
+                        $"'{mapping.Profile}' profile in {Browsers.Name(kind)} yourself (signed in as " +
+                        $"{account ?? "the right account"}), or use:  azpm portal {name} --browser default");
             }
         }
 
