@@ -75,7 +75,7 @@ public sealed class LocalTests : IDisposable
         using var t = new TempHome();
         Directory.SetCurrentDirectory(_work);
         File.WriteAllText(Path.Combine(_work, ".azpm"), "ghost\n");
-        new LocalTrust(t.Home).Allow(Path.Combine(_work, ".azpm"));
+        new LocalHandler(t.Store, new StringWriter(), new StringWriter()).Allow();
 
         var errw = new StringWriter();
         var code = new LocalHandler(t.Store, new StringWriter(), errw).Resolve();
