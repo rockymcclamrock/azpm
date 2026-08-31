@@ -90,10 +90,10 @@ public sealed class McpHandler(ProfileStore store, IAzRunner az, string version)
             {
                 var detail = string.IsNullOrWhiteSpace(r.StdErr) ? r.StdOut : r.StdErr;
                 return new McpToolResult(
-                    $"az exited {r.ExitCode}\n{detail.TrimEnd()}".TrimEnd(), IsError: true);
+                    McpOutput.Sanitize($"az exited {r.ExitCode}\n{detail.TrimEnd()}".TrimEnd()), IsError: true);
             }
 
             return new McpToolResult(
-                string.IsNullOrWhiteSpace(r.StdOut) ? "(no output)" : r.StdOut.TrimEnd());
+                string.IsNullOrWhiteSpace(r.StdOut) ? "(no output)" : McpOutput.Sanitize(r.StdOut.TrimEnd()));
         });
 }

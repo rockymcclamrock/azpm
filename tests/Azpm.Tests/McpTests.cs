@@ -42,12 +42,68 @@ public sealed class AzReadOnlyTests
         Assert.False(AzReadOnly.IsAllowed(cmd));
 
     [Theory]
+    // #11 — diagnostic flags that dump bearer tokens / MSAL logs to stderr
+    [InlineData("account", "show", "--debug")]
+    [InlineData("group", "list", "--verbose")]
+    [InlineData("rest", "--url", "/subscriptions", "--debug")]
+    [InlineData("account", "show", "--debug=true")]
+    // #12 — non-mutating, but hand back live secrets
+    [InlineData("keyvault", "secret", "show", "--vault-name", "v", "-n", "s")]
+    [InlineData("keyvault", "key", "download", "--vault-name", "v", "-n", "k", "-f", "k.pem")]
+    [InlineData("keyvault", "certificate", "backup", "--vault-name", "v", "-n", "c")]
+    [InlineData("storage", "account", "keys", "list", "-n", "sa")]
+    [InlineData("cosmosdb", "keys", "list", "-n", "db", "-g", "rg")]
+    [InlineData("acr", "credential", "show", "-n", "reg")]
+    [InlineData("functionapp", "config", "connection-string", "list", "-n", "fa", "-g", "rg")]
+    [InlineData("webapp", "deployment", "list-publishing-profiles", "-n", "wa", "-g", "rg")]
+    // #12 — az rest reaching non-ARM (secret / PII) planes
+    [InlineData("rest", "--url", "https://myvault.vault.azure.net/secrets/x?api-version=7.4")]
+    [InlineData("rest", "--url", "https://graph.microsoft.com/v1.0/users")]
+    [InlineData("rest", "--method", "get", "--url", "https://management.azure.com/x", "--body", "{}")]
+    public void Rejects_diagnostic_flags_and_secret_surface(params string[] cmd) =>
+        Assert.False(AzReadOnly.IsAllowed(cmd));
+
+    [Theory]
     [InlineData("rest", "--url", "https://management.azure.com/x")]        // defaults to GET
-    [InlineData("rest", "--method", "get", "--url", "https://x")]
-    [InlineData("rest", "-m", "GET", "--url", "https://x")]
-    [InlineData("rest", "--method=head", "--url", "https://x")]
-    public void Allows_az_rest_get(params string[] cmd) =>
+    [InlineData("rest", "--method", "get", "--url", "https://management.azure.com/x")]
+    [InlineData("rest", "-m", "GET", "--url", "/subscriptions")]           // leading slash => ARM
+    [InlineData("rest", "--method=head", "--url", "https://management.azure.com/x")]
+    [InlineData("keyvault", "secret", "list", "--vault-name", "v")]        // ids only, no values
+    [InlineData("keyvault", "show", "-n", "v")]                            // vault metadata
+    public void Allows_az_rest_get_and_non_secret_reads(params string[] cmd) =>
         Assert.True(AzReadOnly.IsAllowed(cmd));
+}
+
+public sealed class McpOutputTests
+{
+    [Fact]
+    public void Redacts_bearer_tokens_and_access_token_fields()
+    {
+        var raw = "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.abcdefg\n"
+            + "{\"accessToken\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9payload\"}";
+        var clean = McpOutput.Sanitize(raw);
+
+        Assert.DoesNotContain("eyJ0eXAiOiJKV1Qi", clean);
+        Assert.Contains("Bearer <redacted>", clean);
+        Assert.Contains("\"accessToken\": \"<redacted>\"", clean);
+    }
+
+    [Fact]
+    public void Caps_oversized_output_with_a_marker()
+    {
+        var big = new string('x', McpOutput.MaxBytes + 50_000);
+        var capped = McpOutput.Sanitize(big);
+
+        Assert.True(System.Text.Encoding.UTF8.GetByteCount(capped) <= McpOutput.MaxBytes);
+        Assert.Contains("output truncated", capped);
+    }
+
+    [Fact]
+    public void Leaves_normal_output_untouched()
+    {
+        const string ok = "[\n  { \"name\": \"rg-dev\", \"location\": \"eastus\" }\n]";
+        Assert.Equal(ok, McpOutput.Sanitize(ok));
+    }
 }
 
 public sealed class McpServerTests
