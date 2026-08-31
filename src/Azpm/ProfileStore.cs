@@ -85,6 +85,15 @@ public sealed class ProfileStore(AzpmHome home)
     public void TouchLastUsed(string name) =>
         UpdateMeta(name, m => m.LastUsed = DateTimeOffset.UtcNow);
 
+    /// <summary>Records a fresh authentication (also counts as a use).</summary>
+    public void MarkLoggedIn(string name) =>
+        UpdateMeta(name, m =>
+        {
+            var now = DateTimeOffset.UtcNow;
+            m.LastLogin = now;
+            m.LastUsed = now;
+        });
+
     public string SpPath(string name) => Path.Combine(Home.ProfileDir(name), "sp.json");
 
     public ServicePrincipal? ReadServicePrincipal(string name) =>

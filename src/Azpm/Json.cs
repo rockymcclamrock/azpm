@@ -10,6 +10,10 @@ public sealed class ProfileMeta
     public string? TenantHint { get; set; }
     public string? Description { get; set; }
     public DateTimeOffset? LastUsed { get; set; }
+
+    /// <summary>When this profile last authenticated (<c>azpm add</c> / <c>login</c> / <c>import</c>).</summary>
+    public DateTimeOffset? LastLogin { get; set; }
+
     public BrowserMapping? Browser { get; set; }
 
     /// <summary>"user" (default, interactive) or "service-principal".</summary>

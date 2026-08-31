@@ -126,4 +126,37 @@ public sealed class LsHandlerTests
             .Select(e => e.GetProperty("name").GetString()!).ToArray();
         Assert.Equal(["a", "b"], names);
     }
+
+    [Fact]
+    public void Ls_shows_relative_login_age_from_meta()
+    {
+        using var t = new TempHome();
+        t.Store.Create("dev", null, null);
+        t.WriteAzureProfile("dev", "u@x", "x.example.com", "Sub");
+        t.Store.UpdateMeta("dev", m => m.LastLogin = DateTimeOffset.UtcNow.AddHours(-5));
+        t.Store.Create("fresh", null, null); // never logged in -> "-"
+
+        var sw = new StringWriter();
+        new LsHandler(t.Store, sw).Run(json: false);
+        var output = sw.ToString();
+
+        Assert.Contains("LOGIN", output);
+        Assert.Contains("5h ago", output);
+    }
+
+    [Fact]
+    public void Ls_check_still_shows_the_login_age_from_meta()
+    {
+        using var t = new TempHome();
+        t.Store.Create("dev", null, null);
+        t.WriteAzureProfile("dev", "u@x", "x.example.com", "Sub");
+        t.Store.UpdateMeta("dev", m => m.LastLogin = DateTimeOffset.UtcNow.AddDays(-2));
+
+        var sw = new StringWriter();
+        new LsHandler(t.Store, sw, () => new FakeAzRunner()).Run(json: false, check: true);
+        var output = sw.ToString();
+
+        Assert.Contains("valid", output);
+        Assert.Contains("2d ago", output);
+    }
 }

@@ -19,7 +19,7 @@ public sealed class ImportHandler(ProfileStore store, TextWriter output)
 
         var profile = store.Create(name, $"imported from {src}", null);
         CopyDirectory(src, profile.ConfigDir);
-        store.TouchLastUsed(name);
+        store.MarkLoggedIn(name);
 
         var sub = store.Load(name).ActiveSubscription;
         output.WriteLine(sub is null

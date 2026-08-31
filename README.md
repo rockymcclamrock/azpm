@@ -168,6 +168,7 @@ azpm logout prod                    # sign out, keep the profile
 azpm rm prod                        # delete it  (prompts unless --yes)
 azpm rename old new
 azpm import mine [--from ~/.azure]   # turn an existing az login into a profile, no re-auth
+azpm ls                             # adds a LOGIN column: how stale each sign-in is
 azpm ls --check                     # actually probe each profile's token (slower)
 azpm path prod                      # print the profile's AZURE_CONFIG_DIR
 azpm prompt --format ' [az:{}]'     # active profile, for your shell prompt (docs/prompt.md)

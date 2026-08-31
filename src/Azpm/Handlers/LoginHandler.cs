@@ -33,7 +33,7 @@ public sealed class LoginHandler(ProfileStore store, IAzRunner az, TextWriter ou
         if (code != 0)
             throw new AzpmException(ExitCode.AzFailed, $"'az login' failed (exit {code})");
 
-        store.TouchLastUsed(name);
+        store.MarkLoggedIn(name);
         var after = store.Load(name).ActiveSubscription;
 
         if (before is not null && after?.User?.Name is { } now && now != before && sp is null)

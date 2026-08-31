@@ -45,11 +45,19 @@ on POSIX — OS-keychain storage is [#9](https://github.com/rockymcclamrock/azpm
 
 ## `azpm ls` / `azpm list` `[--json] [--check]`
 
-Table of every profile: name, account, tenant, active subscription, status. Marks the current
-`AZPM_PROFILE` with `*` and service principals with `(sp)`.
+Table of every profile: name, account, tenant, active subscription, status, and `LOGIN` (how
+long since that profile last authenticated). Marks the current `AZPM_PROFILE` with `*` and
+service principals with `(sp)`.
 
 Status is `ready` / `logged out` from local files (fast). With `--check` it actually asks `az`
 for a token per profile (`valid` / `needs login` / `check timed out`) — a few seconds each.
+
+`LOGIN` is how stale your sign-in is — azpm's own record of the last `add` / `login` / `import`
+for that profile. It is **not** a hard expiry: azpm can't see your org's Conditional Access
+sign-in-frequency policy, which is what actually decides when you re-MFA (`az` never exposes it,
+and the token cache is encrypted at rest). Treat it as "roughly how old is this session" and
+compare against whatever cadence your tenants enforce. Profiles last authenticated before this
+column existed show `-` until their next login.
 
 ## `azpm path <name>`
 
