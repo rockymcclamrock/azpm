@@ -17,9 +17,24 @@ public sealed class UseHandler(ProfileStore store, TextWriter output, TextWriter
         // Not called through the `azpm init` wrapper → the exports above went nowhere.
         if (!emit && Environment.GetEnvironmentVariable(ShellIntegration.Marker) != "1")
         {
-            error.WriteLine($"azpm: 'use' only works through shell integration — nothing changed.");
-            error.WriteLine($"  one-time setup:  add  {ShellIntegration.SetupLine(kind)}  to {ShellIntegration.ProfileFile(kind)}");
-            error.WriteLine($"  or, no setup:    azpm shell {name}   (opens a subshell)");
+            error.WriteLine();
+            error.WriteLine($"azpm: nothing changed — 'azpm use' can't modify the shell that ran it.");
+            error.WriteLine();
+            error.WriteLine($"  To run commands as '{name}' right now:");
+            error.WriteLine($"      azpm shell {name}     (starts a shell that is '{name}'; type 'exit' to leave)");
+
+            if (kind != ShellKind.Cmd)
+            {
+                error.WriteLine();
+                error.WriteLine($"  To make 'azpm use' work in your normal shell: add this line to");
+                error.WriteLine($"  {ShellIntegration.ProfileFile(kind)}, then open a new shell —");
+                error.WriteLine($"      {ShellIntegration.SetupLine(kind)}");
+            }
+            else
+            {
+                error.WriteLine();
+                error.WriteLine($"  ('azpm use' isn't available in cmd.exe — use 'azpm shell', or switch to PowerShell.)");
+            }
         }
         return ExitCode.Ok;
     }
@@ -54,7 +69,8 @@ public sealed class InitHandler(TextWriter output, TextWriter error)
         if (!Console.IsOutputRedirected)
         {
             error.WriteLine();
-            error.WriteLine($"^ that's a shell snippet, not an action. Add this line to {ShellIntegration.ProfileFile(kind)}:");
+            error.WriteLine("The text above is a shell snippet — it does nothing on its own.");
+            error.WriteLine($"Add this one line to {ShellIntegration.ProfileFile(kind)} and open a new shell:");
             error.WriteLine($"    {ShellIntegration.SetupLine(kind, auto)}");
         }
         return ExitCode.Ok;

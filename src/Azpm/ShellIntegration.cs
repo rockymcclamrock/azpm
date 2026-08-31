@@ -76,9 +76,10 @@ public static class ShellIntegration
     }
 
     public static string InitHeader(ShellKind kind, bool auto) => $"""
-        # azpm shell integration. Add this line to {ProfileFile(kind)} and restart your shell:
+        # This is a {ShellName(kind)} snippet — it does nothing on its own.
+        # Add this one line to {ProfileFile(kind)}, then open a new shell:
         #     {SetupLine(kind, auto)}
-        # (running that line now works too, for this session.)
+        # (it enables 'azpm use' / 'azpm deactivate'{(auto ? " and .azpm auto-switching" : "")} in that shell.)
 
         """;
 

@@ -108,6 +108,30 @@ public sealed class ShellIntegrationTests
             Assert.Contains("eval \"$(azpm init bash)\"", err);   // the exact setup line
             Assert.Contains("~/.bashrc", err);
             Assert.Contains("azpm shell dev", err);               // the no-setup alternative
+            Assert.DoesNotContain("shell integration", err);      // no jargon
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(ShellIntegration.Marker, prev);
+        }
+    }
+
+    [Fact]
+    public void Use_hint_for_cmd_points_only_at_azpm_shell()
+    {
+        using var t = new TempHome();
+        t.Store.Create("dev", null, null);
+        var prev = Environment.GetEnvironmentVariable(ShellIntegration.Marker);
+        Environment.SetEnvironmentVariable(ShellIntegration.Marker, null);
+        try
+        {
+            var errw = new StringWriter();
+            new UseHandler(t.Store, new StringWriter(), errw).Run("dev", "cmd", emit: false);
+            var err = errw.ToString();
+            Assert.Contains("azpm shell dev", err);
+            Assert.Contains("cmd.exe", err);
+            Assert.DoesNotContain("azpm init cmd", err);          // never suggest the broken thing
+            Assert.DoesNotContain("eval \"$(", err);
         }
         finally
         {
