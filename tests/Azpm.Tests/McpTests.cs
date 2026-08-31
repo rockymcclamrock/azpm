@@ -33,8 +33,21 @@ public sealed class AzReadOnlyTests
     [InlineData("ad", "sp", "create-for-rbac")]
     [InlineData("group")]                       // no read action, not a bare allowed word
     [InlineData("resource", "update")]
+    [InlineData("provider", "register", "-n", "x")]
+    [InlineData("rest", "--method", "post", "--url", "https://x")]
+    [InlineData("rest", "--method", "PATCH", "--url", "https://x")]
+    [InlineData("rest", "-m", "delete", "--url", "https://x")]
+    [InlineData("rest", "--method=put", "--url", "https://x")]
     public void Rejects_mutations_and_secret_reads(params string[] cmd) =>
         Assert.False(AzReadOnly.IsAllowed(cmd));
+
+    [Theory]
+    [InlineData("rest", "--url", "https://management.azure.com/x")]        // defaults to GET
+    [InlineData("rest", "--method", "get", "--url", "https://x")]
+    [InlineData("rest", "-m", "GET", "--url", "https://x")]
+    [InlineData("rest", "--method=head", "--url", "https://x")]
+    public void Allows_az_rest_get(params string[] cmd) =>
+        Assert.True(AzReadOnly.IsAllowed(cmd));
 }
 
 public sealed class McpServerTests
